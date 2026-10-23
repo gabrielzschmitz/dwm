@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=dwm
+GenericName=Dynamic Window Manager
+Comment=dwm is a dynamic window manager for X
+Exec=dwm
+TryExec=dwm
+Icon=dwm
+Terminal=false
+Categories=System;WindowManager;
+Keywords=wm;tiling;window;manager;
+StartupWMClass=dwm
