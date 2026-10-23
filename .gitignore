@@ -1,0 +1,4 @@
+*.o
+*.lock
+config.h
+dwm
