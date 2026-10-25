@@ -92,7 +92,7 @@ static const char* colors[][3] = {
 /* tagging */
 static char* tags[] = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"};
 
-static const char* dmenu[] = {"dmenu_run", NULL};
+static const char* dmenu[] = {"dmenu_run", "-p", "󰀻 ", NULL};
 
 static const Launcher launchers[] = {
   /* command     name to display */
@@ -185,7 +185,7 @@ static const Key keys[] = {
   {MODKEY | ShiftMask, XK_p, spawn,
    SHCMD("maim --select | xclip -selection clipboard -t image/png")},
 
-  {MODKEY, XK_d, spawn, SHCMD("dmenu_run")},
+  {MODKEY, XK_d, spawn, SHCMD("dmenu_run -p '󰀻 '")},
   {MODKEY, XK_Return, spawn, SHCMD("st")},
 
   // toggle stuff
