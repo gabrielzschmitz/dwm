@@ -7,7 +7,7 @@
 set -u
 
 # One Dark colors
-black='#1e222a'
+black='#14171c'
 white='#abb2bf'
 grey='#282c34'
 blue='#7aa2f7'

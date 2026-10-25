@@ -53,7 +53,7 @@ static const char* fonts[] = {"SFMono Nerd Font:size=12",
                               "SFMono Nerd Font:size=14"};
 
 // One Dark theme
-static const char black[] = "#1e222a";
+static const char black[] = "#14171c";
 static const char white[] = "#abb2bf";
 static const char gray2[] = "#282c34";  // unfocused window border
 static const char gray3[] = "#545862";
@@ -64,7 +64,7 @@ static const char red[] = "#e06c75";
 static const char orange[] = "#caaa6a";
 static const char yellow[] = "#EBCB8B";
 static const char pink[] = "#c678dd";
-static const char col_borderbar[] = "#1e222a";  // inner border
+static const char col_borderbar[] = "#14171c";  // inner border
 
 static const char* colors[][3] = {
   /*                     fg       bg      border */
