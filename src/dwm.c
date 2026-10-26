@@ -309,7 +309,6 @@ static Client* nexttiled(Client* c);
 static void placemouse(const Arg* arg);
 static void pop(Client* c);
 static void propertynotify(XEvent* e);
-static void quit(const Arg* arg);
 static void restart(const Arg* arg);
 static Client* recttoclient(int x, int y, int w, int h);
 static Monitor* recttomon(int x, int y, int w, int h);
@@ -589,6 +588,7 @@ int applysizehints(Client* c, int* x, int* y, int* w, int* h, int interact) {
  * @param m          Monitor to arrange, or NULL for every monitor.
  */
 void arrange(Monitor* m) {
+  XEvent ev;
   if (m)
     showhide(m->stack);
   else
@@ -596,8 +596,11 @@ void arrange(Monitor* m) {
   if (m) {
     arrangemon(m);
     restack(m);
-  } else
+  } else {
     for (m = mons; m; m = m->next) arrangemon(m);
+    XSync(dpy, False);
+    while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
+  }
 }
 
 /**
@@ -1552,12 +1555,6 @@ void dragmfact(const Arg* arg) {
 void drawbar(Monitor* m) {
   int x, y = borderpx, w, sw = 0, stw = 0;
   int bh_n = bh - borderpx * 2;
-  int mw;
-  if (floatbar) {
-    mw = m->ww - m->gappov * 2 - borderpx * 2;
-  } else {
-    mw = m->ww - borderpx * 2;
-  }
   int boxs = drw->fonts->h / 9;
   int boxw = drw->fonts->h / 6 + 2;
   unsigned int i, occ = 0, urg = 0;
@@ -1906,7 +1903,7 @@ void focus(Client* c) {
     XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
     setfocus(c);
   } else {
-    XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
+    XSetInputFocus(dpy, selmon->barwin, RevertToPointerRoot, CurrentTime);
     XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
   }
   selmon->sel = c;
