@@ -127,6 +127,9 @@ This build includes the following patches:
 - [underline tags](https://dwm.suckless.org/patches/underlinetags/)
 - [notitle](https://dwm.suckless.org/patches/notitle/)
 - [winicon](https://dwm.suckless.org/patches/winicon/)
+- [fixmultimon](https://dwm.suckless.org/patches/fixmultimon/)
+- [focusmonmouse](https://dwm.suckless.org/patches/focusmonmouse/)
+- [preventfocusshift](https://dwm.suckless.org/patches/preventfocusshift/)
 - [preserveonrestart](https://github.com/PhyTech-R0/dwm-phyOS/blob/master/patches/dwm-6.3-patches/dwm-preserveonrestart-6.3.diff)
 - [shiftview](https://lists.suckless.org/dev/1104/7590.html)
 
