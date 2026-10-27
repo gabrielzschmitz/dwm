@@ -1,4 +1,4 @@
 *.o
-*.lock
 config.h
 dwm
+result
