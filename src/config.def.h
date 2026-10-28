@@ -287,7 +287,7 @@ static const Key keys[] = {
   // scratchpads
   {Mod1Mask, XK_Return, togglescratch, {.ui = 0}},
   {Mod1Mask, XK_i, togglescratch, {.ui = 1}},
-  {Mod1Mask, XK_f, togglescratch, {.ui = 1}},
+  {Mod1Mask, XK_f, togglescratch, {.ui = 2}},
 
   // kill dwm
   {MODKEY | ShiftMask, XK_c, spawn, SHCMD("pkill dwm")},
