@@ -90,16 +90,17 @@ static const char* colors[][3] = {
 };
 
 typedef struct {
-  const char* name;
+  const char* class;
   const void* cmd;
 } Sp;
-const char* sptermcmd[] = {"st",     "-n", "spterm", "-c",
-                           "spterm", "-g", "120x34", NULL};
-const char* spcideacmd[] = {"env", "TERMINAL=st", "idea", NULL};
+const char* sptermcmd[] = {"st",     "-n", "Scractpad Term", "-c",
+                           "spterm", "-g", "100x25",         NULL};
+const char* spideacmd[] = {"st",     "-n", "Idea Sandbox", "-c",
+                           "spidea", "-g", "50x25",        NULL};
 static Sp scratchpads[] = {
-  /* name          cmd  */
+  /* class, cmd  */
   {"spterm", sptermcmd},
-  {"spidea", spcideacmd},
+  {"spidea", spideacmd},
 };
 
 /* tagging */
