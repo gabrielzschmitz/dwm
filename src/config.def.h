@@ -93,14 +93,19 @@ typedef struct {
   const char* class;
   const void* cmd;
 } Sp;
-const char* sptermcmd[] = {"st",     "-n", "Scractpad Term", "-c",
-                           "spterm", "-g", "100x25",         NULL};
-const char* spideacmd[] = {"st", "-n",    "Idea Sandbox", "-c",   "spidea",
-                           "-g", "55x25", "-e",           "idea", NULL};
+const char* sptermcmd[] = {"st", "-c",     "spterm", "-T", "Scratchpad Term",
+                           "-g", "100x25", NULL};
+
+const char* spideacmd[] = {"st", "-c",    "spidea", "-T",   "Idea Sandbox",
+                           "-g", "55x25", "-e",     "idea", NULL};
+
+const char* spfmcmd[] = {"st", "-c",     "spfm", "-T",  "File Manager",
+                         "-g", "120x30", "-e",   "nnn", NULL};
 static Sp scratchpads[] = {
   /* class, cmd  */
   {"spterm", sptermcmd},
   {"spidea", spideacmd},
+  {"spfm", spfmcmd},
 };
 
 /* tagging */
@@ -136,6 +141,7 @@ static const Rule rules[] = {
   {"Tomato.C", NULL, NULL, 1 << 8, 1, 1, -1},
   {"spterm", NULL, NULL, SPTAG(0), 1, 1, -1},
   {"spidea", NULL, NULL, SPTAG(1), 1, 1, -1},
+  {"spfm", NULL, NULL, SPTAG(1), 1, 1, -1},
 };
 
 /* layout(s) */
@@ -281,6 +287,7 @@ static const Key keys[] = {
   // scratchpads
   {Mod1Mask, XK_Return, togglescratch, {.ui = 0}},
   {Mod1Mask, XK_i, togglescratch, {.ui = 1}},
+  {Mod1Mask, XK_f, togglescratch, {.ui = 1}},
 
   // kill dwm
   {MODKEY | ShiftMask, XK_c, spawn, SHCMD("pkill dwm")},
