@@ -89,6 +89,18 @@ static const char* colors[][3] = {
   [SchemeBtnClose] = {red, black, black},
 };
 
+typedef struct {
+  const char* name;
+  const void* cmd;
+} Sp;
+const char* sptermcmd[] = {"st", "-n", "scratchpad", "-g", "120x34", NULL};
+const char* spcideacmd[] = {"idea", NULL};
+static Sp scratchpads[] = {
+  /* name          cmd  */
+  {"spterm", sptermcmd},
+  {"spidea", spcideacmd},
+};
+
 /* tagging */
 static char* tags[] = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"};
 
@@ -118,8 +130,10 @@ static const Rule rules[] = {
     *	WM_CLASS(STRING) = instance, class
     *	WM_NAME(STRING) = title
     */
-  /* class      instance    title       tags mask     iscentered   isfloating   monitor */
+  /* class, instance ,title ,tags mask ,iscentered ,isfloating ,monitor */
   {"Tomato.C", NULL, NULL, 1 << 8, 1, 1, -1},
+  {NULL, "spterm", NULL, SPTAG(0), 1, 1, -1},
+  {NULL, "spidea", NULL, SPTAG(1), 1, 1, -1},
 };
 
 /* layout(s) */
@@ -261,6 +275,10 @@ static const Key keys[] = {
   {MODKEY | Mod1Mask | ControlMask, XK_minus, setborderpx, {.i = -1}},
   {MODKEY | Mod1Mask | ControlMask, XK_equal, setborderpx, {.i = +1}},
   {MODKEY | Mod1Mask | ControlMask, XK_0, setborderpx, {.i = default_border}},
+
+  // scratchpads
+  {Mod1Mask, XK_Return, togglescratch, {.ui = 0}},
+  {Mod1Mask, XK_i, togglescratch, {.ui = 1}},
 
   // kill dwm
   {MODKEY | ShiftMask, XK_c, spawn, SHCMD("pkill dwm")},

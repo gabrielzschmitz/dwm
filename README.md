@@ -123,6 +123,7 @@ This build includes the following patches:
 - [vanitygaps](https://dwm.suckless.org/patches/vanitygaps/)
 - [colorful tags](https://github.com/fitrh/dwm/issues/1)
 - [statuspadding](https://dwm.suckless.org/patches/statuspadding/)
+- [scratchpads](https://dwm.suckless.org/patches/scratchpads/)
 - [status2d](https://dwm.suckless.org/patches/status2d/)
 - [underline tags](https://dwm.suckless.org/patches/underlinetags/)
 - [notitle](https://dwm.suckless.org/patches/notitle/)
