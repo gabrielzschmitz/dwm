@@ -93,8 +93,9 @@ typedef struct {
   const char* name;
   const void* cmd;
 } Sp;
-const char* sptermcmd[] = {"st", "-n", "scratchpad", "-g", "120x34", NULL};
-const char* spcideacmd[] = {"idea", NULL};
+const char* sptermcmd[] = {"st",     "-n", "spterm", "-c",
+                           "spterm", "-g", "120x34", NULL};
+const char* spcideacmd[] = {"env", "TERMINAL=st", "idea", NULL};
 static Sp scratchpads[] = {
   /* name          cmd  */
   {"spterm", sptermcmd},
@@ -132,8 +133,8 @@ static const Rule rules[] = {
     */
   /* class, instance ,title ,tags mask ,iscentered ,isfloating ,monitor */
   {"Tomato.C", NULL, NULL, 1 << 8, 1, 1, -1},
-  {NULL, "spterm", NULL, SPTAG(0), 1, 1, -1},
-  {NULL, "spidea", NULL, SPTAG(1), 1, 1, -1},
+  {"spterm", NULL, NULL, SPTAG(0), 1, 1, -1},
+  {"spidea", NULL, NULL, SPTAG(1), 1, 1, -1},
 };
 
 /* layout(s) */
