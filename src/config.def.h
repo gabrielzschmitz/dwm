@@ -95,8 +95,8 @@ typedef struct {
 } Sp;
 const char* sptermcmd[] = {"st",     "-n", "Scractpad Term", "-c",
                            "spterm", "-g", "100x25",         NULL};
-const char* spideacmd[] = {"st",     "-n", "Idea Sandbox", "-c",
-                           "spidea", "-g", "50x25",        NULL};
+const char* spideacmd[] = {"st", "-n",    "Idea Sandbox", "-c",   "spidea",
+                           "-g", "50x25", "-e",           "idea", NULL};
 static Sp scratchpads[] = {
   /* class, cmd  */
   {"spterm", sptermcmd},
