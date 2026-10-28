@@ -93,14 +93,15 @@ typedef struct {
   const char* class;
   const void* cmd;
 } Sp;
-const char* sptermcmd[] = {"st", "-c",     "spterm", "-T", "Scratchpad Term",
-                           "-g", "100x25", NULL};
+const char* sptermcmd[] = {"env", "SPTERM=1",        "st", "-c",     "spterm",
+                           "-T",  "Scratchpad Term", "-g", "100x25", NULL};
 
 const char* spideacmd[] = {"st", "-c",    "spidea", "-T",   "Idea Sandbox",
                            "-g", "55x25", "-e",     "idea", NULL};
 
 const char* spfmcmd[] = {"st", "-c",     "spfm", "-T",  "File Manager",
                          "-g", "120x30", "-e",   "nnn", NULL};
+
 static Sp scratchpads[] = {
   /* class, cmd  */
   {"spterm", sptermcmd},
