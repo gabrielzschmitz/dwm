@@ -54,7 +54,7 @@ mem() {
   }
   ' /proc/meminfo)
 
-  printf '^c%s^^b%s^   ' "$pink" "$black"
+  printf '^c%s^^b%s^  ' "$pink" "$black"
   printf '^c%s^%s' "$pink" "${used:-N/A}"
 }
 
