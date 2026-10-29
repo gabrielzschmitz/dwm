@@ -142,7 +142,7 @@ static const Rule rules[] = {
   {"Tomato.C", NULL, NULL, 1 << 8, 1, 1, -1},
   {"spterm", NULL, NULL, SPTAG(0), 1, 1, -1},
   {"spidea", NULL, NULL, SPTAG(1), 1, 1, -1},
-  {"spfm", NULL, NULL, SPTAG(1), 1, 1, -1},
+  {"spfm", NULL, NULL, SPTAG(2), 1, 1, -1},
 };
 
 /* layout(s) */
