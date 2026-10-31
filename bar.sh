@@ -37,7 +37,7 @@ brightness() {
     (( maximum > 0 )) || continue
 
     percentage=$((current * 100 / maximum))
-    printf '^c%s^  %s%%' "$red" "$percentage"
+    printf '^c%s^  %s%%' "$red" "$percentage"
     return
   done
 }
@@ -92,7 +92,7 @@ battery() {
     capacity=$(cat "$battery_dir/capacity" 2>/dev/null) || continue
     status=$(cat "$battery_dir/status" 2>/dev/null || true)
 
-    printf '^c%s^^b%s^ BAT' "$black" "$red"
+    printf '^c%s^^b%s^ BAT ' "$black" "$red"
     printf '^c%s^^b%s^ %s%%' "$white" "$grey" "$capacity"
 
     [[ "$status" == "Charging" ]] && printf '^c%s^+' "$green"
@@ -101,61 +101,49 @@ battery() {
   done
 }
 
-wlan() {
+network() {
   local device state
 
-  for device in /sys/class/net/*; do
-    [[ -d "$device/wireless" ]] || continue
-
-    state=$(cat "$device/operstate" 2>/dev/null || true)
-
-    case "$state" in
-      up)
-        printf '^c%s^^b%s^ 󰤨 ^d^%s' \
-          "$black" "$blue" ' ^c#7aa2f7^Connected'
-        return
-        ;;
-      down | dormant)
-        printf '^c%s^^b%s^ 󰤭 ^d^%s' \
-          "$black" "$blue" ' ^c#7aa2f7^Disconnected'
-        return
-        ;;
-    esac
-  done
-}
-
-ethernet() {
-  local device state
-
+  # Ethernet takes priority when connected.
   for device in /sys/class/net/enp*; do
     [[ -d "$device" ]] || continue
 
     state=$(cat "$device/operstate" 2>/dev/null || true)
 
-    case "$state" in
-      up)
-        printf '^c%s^^b%s^ 󰈁 ^d^%s' \
-          "$black" "$blue" ' ^c#7aa2f7^Connected'
-        return
-        ;;
-      down | dormant | lowerlayerdown | unknown)
-        printf '^c%s^^b%s^ 󰈂 ^d^%s' \
-          "$black" "$blue" ' ^c#7aa2f7^Disconnected'
-        return
-        ;;
-    esac
+    if [[ "$state" == "up" ]]; then
+      printf '^c%s^^b%s^ 󰈁 ^d^%s' \
+        "$black" "$blue" ' ^c#7aa2f7^Connected'
+      return
+    fi
+  done
+
+  # Otherwise, show Wi-Fi, whether connected or disconnected.
+  for device in /sys/class/net/*; do
+    [[ -d "$device/wireless" ]] || continue
+
+    state=$(cat "$device/operstate" 2>/dev/null || true)
+
+    if [[ "$state" == "up" ]]; then
+      printf '^c%s^^b%s^ 󰤨  ^d^%s' \
+        "$black" "$blue" ' ^c#7aa2f7^Connected'
+    else
+      printf '^c%s^^b%s^ 󰤭  ^d^%s' \
+        "$black" "$blue" ' ^c#7aa2f7^Disconnected'
+    fi
+
+    return
   done
 }
 
 clock() {
-  printf '^c%s^^b%s^ 󱑆 ' "$black" "$darkblue"
+  printf '^c%s^^b%s^ 󱑆  ' "$black" "$darkblue"
   printf '^c%s^^b%s^ %s' "$black" "$blue" "$(date '+%H:%M')"
 }
 
 while true; do
   status=""
 
-  for module in cpu brightness mem volume battery ethernet wlan clock; do
+  for module in cpu mem volume battery brightness network clock; do
     output=$("$module")
 
     if [[ -n "$output" ]]; then
