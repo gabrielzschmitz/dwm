@@ -113,10 +113,12 @@ static Sp scratchpads[] = {
 static char* tags[] = {"I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"};
 
 static const char* dmenu[] = {"dmenu_run", "-p", "󰀻 ", NULL};
+static const char* powermenu[] = {"powermenu", NULL};
 
 static const Launcher launchers[] = {
   /* command     name to display */
   {dmenu, "󰀻"},
+  {powermenu, "󰐦"},
 };
 
 static const int tagschemes[] = {
@@ -195,12 +197,13 @@ static const Layout layouts[] = {
 static const Key keys[] = {
   /* modifier                         key         function        argument */
 
-  // brightness and audio
+  // fn keys
   {0, XF86XK_AudioLowerVolume, spawn, SHCMD("pamixer --allow-boost -d 5")},
   {0, XF86XK_AudioMute, spawn, SHCMD("pamixer -t")},
   {0, XF86XK_AudioRaiseVolume, spawn, SHCMD("pamixer --allow-boost -i 5")},
   {0, XF86XK_MonBrightnessUp, spawn, SHCMD("brightnessctl set 10%+")},
   {0, XF86XK_MonBrightnessDown, spawn, SHCMD("brightnessctl set 10%-")},
+  {ShiftMask | Mod4Mask, XF86XK_Assistant, spawn, SHCMD("powermenu")},
 
   // screenshot fullscreen and cropped
   {MODKEY | ControlMask, XK_p, spawn,
