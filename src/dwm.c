@@ -28,6 +28,7 @@
 #include <X11/Xproto.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
+#include <X11/Xcursor/Xcursor.h>
 #include <X11/keysym.h>
 #include <errno.h>
 #include <locale.h>
@@ -3333,11 +3334,11 @@ void setup(void) {
   netatom[NetDesktopNames] = XInternAtom(dpy, "_NET_DESKTOP_NAMES", False);
   netatom[NetClientInfo] = XInternAtom(dpy, "_NET_CLIENT_INFO", False);
   /* init cursors */
-  cursor[CurNormal] = drw_cur_create(drw, XC_left_ptr);
-  cursor[CurResize] = drw_cur_create(drw, XC_sizing);
-  cursor[CurMove] = drw_cur_create(drw, XC_fleur);
-  cursor[CurResizeHorzArrow] = drw_cur_create(drw, XC_sb_h_double_arrow);
-  cursor[CurResizeVertArrow] = drw_cur_create(drw, XC_sb_v_double_arrow);
+  cursor[CurNormal] = drw_cur_create(drw, "left_ptr");
+  cursor[CurResize] = drw_cur_create(drw, "bottom_right_corner");
+  cursor[CurMove] = drw_cur_create(drw, "fleur");
+  cursor[CurResizeHorzArrow] = drw_cur_create(drw, "sb_h_double_arrow");
+  cursor[CurResizeVertArrow] = drw_cur_create(drw, "sb_v_double_arrow");
   /* init appearance */
   scheme = ecalloc(LENGTH(colors) + 1, sizeof(Clr*));
   scheme[LENGTH(colors)] = drw_scm_create(drw, colors[0], 3);

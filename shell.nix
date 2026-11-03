@@ -19,6 +19,7 @@ pkgs.mkShell {
     freetype
     imlib2
     libX11
+    libXcursor
     libXinerama
     libXrender
     libXft

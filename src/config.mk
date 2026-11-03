@@ -31,8 +31,9 @@ INCS = -I${X11INC} -I${FREETYPEINC} \
        `$(PKG_CONFIG) --cflags imlib2` \
        `$(PKG_CONFIG) --cflags fontconfig` \
        `$(PKG_CONFIG) --cflags freetype2`
-LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS} -lXrender \
+LIBS = -L${X11LIB} -lX11 -lXcursor ${XINERAMALIBS} ${FREETYPELIBS} -lXrender \
        `$(PKG_CONFIG) --libs imlib2` \
+       `$(PKG_CONFIG) --cflags xcursor` \
        `$(PKG_CONFIG) --libs fontconfig` \
        `$(PKG_CONFIG) --libs freetype2`
 

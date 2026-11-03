@@ -70,7 +70,7 @@ Clr* drw_scm_create(Drw* drw, const char* clrnames[], size_t clrcount);
  * @name Cursor abstraction
  * @{
  */
-Cur* drw_cur_create(Drw* drw, int shape);
+Cur* drw_cur_create(Drw* drw, const char* shape);
 void drw_cur_free(Drw* drw, Cur* cursor);
 /** @} */
 

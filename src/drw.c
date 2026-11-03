@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <X11/Xlib.h>
+#include <X11/Xcursor/Xcursor.h>
 #include <X11/Xft/Xft.h>
 #include <Imlib2.h>
 
@@ -678,18 +679,23 @@ void drw_font_getexts(Fnt* font, const char* text, unsigned int len,
 }
 
 /**
- * @brief Create a cursor of the given X cursor shape.
+ * @brief Create a cursor using the active Xcursor theme.
  *
  * @param drw        Drawing context.
- * @param shape      X cursor shape constant.
+ * @param shape      Xcursor theme cursor name.
  * @return Newly allocated cursor, or NULL on failure.
  */
-Cur* drw_cur_create(Drw* drw, int shape) {
+Cur* drw_cur_create(Drw* drw, const char* shape) {
   Cur* cur;
 
-  if (!drw || !(cur = ecalloc(1, sizeof(Cur)))) return NULL;
+  if (!drw || !shape || !(cur = ecalloc(1, sizeof(Cur)))) return NULL;
 
-  cur->cursor = XCreateFontCursor(drw->dpy, shape);
+  cur->cursor = XcursorLibraryLoadCursor(drw->dpy, shape);
+
+  if (!cur->cursor) {
+    free(cur);
+    return NULL;
+  }
 
   return cur;
 }

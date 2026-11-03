@@ -7,6 +7,7 @@
   freetype,
   imlib2,
   libX11,
+  libXcursor,
   libXinerama,
   libXrender,
   libXft,
@@ -34,6 +35,7 @@ stdenv.mkDerivation {
     freetype
     imlib2
     libX11
+    libXcursor
     libXinerama
     libXrender
     libXft
