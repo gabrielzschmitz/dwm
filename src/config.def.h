@@ -192,6 +192,9 @@ static const Layout layouts[] = {
     .v = (const char*[]) { "/bin/sh", "-c", cmd, NULL } \
   }
 
+/* XF86XK_Assistant = keypress produced by Copylot Key */
+#define XK_Copilot 0x10081247
+
 /* commands */
 static const Key keys[] = {
   /* modifier                         key         function        argument */
@@ -202,8 +205,7 @@ static const Key keys[] = {
   {0, XF86XK_AudioRaiseVolume, spawn, SHCMD("pamixer --allow-boost -i 5")},
   {0, XF86XK_MonBrightnessUp, spawn, SHCMD("brightnessctl set 10%+")},
   {0, XF86XK_MonBrightnessDown, spawn, SHCMD("brightnessctl set 10%-")},
-  // XF86XK_Assistant = keypress produced by Copylot Key
-  {MODKEY | ShiftMask, XF86XK_Assistant, spawn, SHCMD("powermenu")},
+  {MODKEY | ShiftMask, XK_Copilot, spawn, SHCMD("powermenu")},
 
   // screenshot fullscreen and cropped
   {MODKEY | ControlMask, XK_p, spawn,
