@@ -37,7 +37,7 @@ brightness() {
     (( maximum > 0 )) || continue
 
     percentage=$((current * 100 / maximum))
-    printf '^c%s^  %s%%' "$red" "$percentage"
+    printf '^c%s^ %s%%' "$red" "$percentage"
     return
   done
 }
@@ -54,7 +54,7 @@ mem() {
   }
   ' /proc/meminfo)
 
-  printf '^c%s^^b%s^  ' "$pink" "$black"
+  printf '^c%s^^b%s^ ' "$pink" "$black"
   printf '^c%s^%s' "$pink" "${used:-N/A}"
 }
 
@@ -124,10 +124,10 @@ network() {
     state=$(cat "$device/operstate" 2>/dev/null || true)
 
     if [[ "$state" == "up" ]]; then
-      printf '^c%s^^b%s^ 󰤨  ^d^%s' \
+      printf '^c%s^^b%s^ 󰤨 ^d^%s' \
         "$black" "$blue" ' ^c#7aa2f7^Connected'
     else
-      printf '^c%s^^b%s^ 󰤭  ^d^%s' \
+      printf '^c%s^^b%s^ 󰤭 ^d^%s' \
         "$black" "$blue" ' ^c#7aa2f7^Disconnected'
     fi
 
@@ -136,7 +136,7 @@ network() {
 }
 
 clock() {
-  printf '^c%s^^b%s^ 󱑆  ' "$black" "$darkblue"
+  printf '^c%s^^b%s^ 󱑆 ' "$black" "$darkblue"
   printf '^c%s^^b%s^ %s' "$black" "$blue" "$(date '+%H:%M')"
 }
 
