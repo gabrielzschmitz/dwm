@@ -202,8 +202,8 @@ static const Key keys[] = {
   {0, XF86XK_AudioRaiseVolume, spawn, SHCMD("pamixer --allow-boost -i 5")},
   {0, XF86XK_MonBrightnessUp, spawn, SHCMD("brightnessctl set 10%+")},
   {0, XF86XK_MonBrightnessDown, spawn, SHCMD("brightnessctl set 10%-")},
-  // XF86XK_Assistant = 0x10081247 (keypress produced by Copylot Key)
-  {MODKEY | ShiftMask, 0x10081247, spawn, SHCMD("powermenu")},
+  // XF86XK_Assistant = keypress produced by Copylot Key
+  {MODKEY | ShiftMask, XF86XK_Assistant, spawn, SHCMD("powermenu")},
 
   // screenshot fullscreen and cropped
   {MODKEY | ControlMask, XK_p, spawn,
