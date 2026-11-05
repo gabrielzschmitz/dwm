@@ -63,4 +63,14 @@ xephyr:
 run:
 	DISPLAY=${XEPHYR_DISPLAY} ./dwm
 
-.PHONY: all clean dist install uninstall xephyr run
+DEV_DIR = /tmp/dwm-dev
+DEV_BAR_PID = ${DEV_DIR}/bar.pid
+
+dev: all
+	@mkdir -p ${DEV_DIR}
+	@if [ -f ${DEV_BAR_PID} ]; then kill $$(cat ${DEV_BAR_PID}) 2>/dev/null; rm -f ${DEV_BAR_PID}; fi
+	@pgrep -x Xephyr >/dev/null || (Xephyr ${XEPHYR_DISPLAY} -screen ${XEPHYR_SIZE} 2>/dev/null &) ; sleep 1
+	@DISPLAY=${XEPHYR_DISPLAY} sh ../bar.sh & echo $$! > ${DEV_BAR_PID}
+	DISPLAY=${XEPHYR_DISPLAY} ./dwm; kill $$(cat ${DEV_BAR_PID}) 2>/dev/null; rm -f ${DEV_BAR_PID}
+
+.PHONY: all clean dist install uninstall xephyr run dev
