@@ -18,6 +18,31 @@ yellow='#EBCB8B'
 pink='#c678dd'
 darkblue='#668ee3'
 
+pomodoro_file="${XDG_RUNTIME_DIR:-/tmp}/dwm-pomodoro"
+
+(
+  while true; do
+    stdbuf -oL tomato -t 2>/dev/null | while IFS= read -r line; do
+      printf '%s\n' "$line" > "$pomodoro_file"
+    done
+    sleep 1
+  done
+) &
+trap 'kill 0' EXIT
+
+pomodoro() {
+  local output
+
+  find "$pomodoro_file" -newermt '-3 seconds' 2>/dev/null | grep -q . || return
+
+  output=$(tail -n 1 "$pomodoro_file" 2>/dev/null) || return
+  output=${output//$'\r'/}
+  output=${output#"${output%%[![:space:]]*}"}
+  [[ -n "$output" ]] || return
+
+  printf '^c%s^^b%s^ %s^b%s^' "$black" "$pink" "$output" "$black"
+}
+
 cpu() {
   local load
   load=$(awk '{ print $1 }' /proc/loadavg)
@@ -143,7 +168,7 @@ clock() {
 while true; do
   status=""
 
-  for module in cpu mem volume battery brightness network clock; do
+  for module in pomodoro cpu mem volume battery brightness network clock; do
     output=$("$module")
 
     if [[ -n "$output" ]]; then
@@ -153,5 +178,5 @@ while true; do
   done
 
   xsetroot -name " $status" 2>/dev/null || exit 1
-  sleep 1
+  sleep 0.25
 done
