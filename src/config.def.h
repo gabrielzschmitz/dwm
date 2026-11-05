@@ -102,8 +102,8 @@ const char* spideacmd[] = {"st", "-c",    "spidea", "-T",   "Idea Sandbox",
 const char* spfmcmd[] = {"st", "-c",     "spfm", "-T",  "File Manager",
                          "-g", "120x30", "-e",   "nnn", NULL};
 
-const char* sptomatoccmd[] = {"st",       "-c", "sptomatoc", "-T",
-                              "Tomato.C", "-g", "120x38",    NULL};
+const char* sptomatoccmd[] = {"st", "-c",     "sptomatoc", "-T",     "Tomato.C",
+                              "-g", "120x38", "-e",        "tomato", NULL};
 
 static Sp scratchpads[] = {
   /* class, cmd  */
