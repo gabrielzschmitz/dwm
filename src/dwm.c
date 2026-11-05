@@ -821,6 +821,7 @@ void cleanupmon(Monitor* mon) {
   XDestroyWindow(dpy, mon->tabwin);
   XUnmapWindow(dpy, mon->tagwin);
   XDestroyWindow(dpy, mon->tagwin);
+  free(mon->pertag);
   free(mon);
 }
 
@@ -942,6 +943,7 @@ void configurenotify(XEvent* e) {
     if (updategeom() || dirty) {
       drw_resize(drw, sw, bh);
       updatebars();
+      updatepreview();
       for (m = mons; m; m = m->next) {
         for (c = m->clients; c; c = c->next)
           if (c->isfullscreen) resizeclient(c, m->mx, m->my, m->mw, m->mh);
@@ -2830,7 +2832,7 @@ void removesystrayicon(Client* i) {
 
   if (!showsystray || !i) return;
   for (ii = &systray->icons; *ii && *ii != i; ii = &(*ii)->next);
-  if (ii) *ii = i->next;
+  if (*ii) *ii = i->next;
   free(i);
 }
 
@@ -3870,6 +3872,7 @@ void updatepreview(void) {
                              .background_pixmap = ParentRelative,
                              .event_mask = ButtonPressMask | ExposureMask};
   for (m = mons; m; m = m->next) {
+    if (m->tagwin) continue;
     m->tagwin = XCreateWindow(
       dpy, root, m->wx, m->by + bh, m->mw / 4, m->mh / 4, 0,
       DefaultDepth(dpy, screen), CopyFromParent, DefaultVisual(dpy, screen),
@@ -4003,6 +4006,7 @@ int updategeom(void) {
         m->clients = c->next;
         detachstack(c);
         c->mon = mons;
+        c->tags = mons->tagset[mons->seltags];
         attach(c);
         attachstack(c);
       }
