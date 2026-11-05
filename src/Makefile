@@ -54,4 +54,13 @@ uninstall:
 		${DESTDIR}${ICONPREFIX}/hicolor/scalable/apps/dwm.svg\
 		${DESTDIR}${ICONPREFIX}/hicolor/256x256/apps/dwm.png
 
-.PHONY: all clean dist install uninstall
+XEPHYR_DISPLAY ?= :1
+XEPHYR_SIZE ?= 1280x720
+
+xephyr:
+	Xephyr ${XEPHYR_DISPLAY} -screen ${XEPHYR_SIZE} &
+
+run:
+	DISPLAY=${XEPHYR_DISPLAY} ./dwm
+
+.PHONY: all clean dist install uninstall xephyr run

@@ -12,6 +12,7 @@ pkgs.mkShell {
     gcc
     bear
     clang-tools
+    xorgserver # provides Xephyr
   ];
 
   buildInputs = with pkgs; [
@@ -30,4 +31,12 @@ pkgs.mkShell {
     procps
     xsetroot
   ];
+
+  shellHook = ''
+    echo "dwm dev shell"
+    echo "  make            build dwm (run inside src/)"
+    echo "  make xephyr     start Xephyr on :1 (1280x720)"
+    echo "  make run        run ./dwm inside Xephyr"
+    echo "  make dev        build, start Xephyr if needed, run dwm inside it"
+  '';
 }
