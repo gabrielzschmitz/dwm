@@ -1586,9 +1586,8 @@ void drawbar(Monitor* m) {
   if (!m->showbar) return;
 
   /* draw status first so it can be overdrawn by tags later */
-  if (m == selmon) { /* status is only drawn on selected monitor */
-    sw = drawstatusbar(m, bh_n, stext);
-  }
+  /* status is drawn on every monitor, not only the selected one */
+  sw = drawstatusbar(m, bh_n, stext);
 
   resizebarwin(m);
   for (c = m->clients; c; c = c->next) {
