@@ -152,6 +152,6 @@ while true; do
     fi
   done
 
-  xsetroot -name " $status"
+  xsetroot -name " $status" 2>/dev/null || exit 1
   sleep 1
 done
