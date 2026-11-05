@@ -640,6 +640,7 @@ void attach(Client* c) {
     Client** tmp = &c->mon->clients;
     while (*tmp) tmp = &(*tmp)->next;
     *tmp = c;
+    c->next = NULL;
   } else {
     c->next = c->mon->clients;
     c->mon->clients = c;
@@ -2508,7 +2509,10 @@ void movemouse(const Arg* arg) {
   if (XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
                    None, cursor[CurMove]->cursor, CurrentTime) != GrabSuccess)
     return;
-  if (!getrootptr(&x, &y)) return;
+  if (!getrootptr(&x, &y)) {
+    XUngrabPointer(dpy, CurrentTime);
+    return;
+  }
   do {
     XMaskEvent(dpy, MOUSEMASK | ExposureMask | SubstructureRedirectMask, &ev);
     switch (ev.type) {
@@ -2523,14 +2527,15 @@ void movemouse(const Arg* arg) {
 
         nx = ocx + (ev.xmotion.x - x);
         ny = ocy + (ev.xmotion.y - y);
-        if (abs(selmon->wx - nx) < snap)
-          nx = selmon->wx;
-        else if (abs((selmon->wx + selmon->ww) - (nx + WIDTH(c))) < snap)
-          nx = selmon->wx + selmon->ww - WIDTH(c);
-        if (abs(selmon->wy - ny) < snap)
-          ny = selmon->wy;
-        else if (abs((selmon->wy + selmon->wh) - (ny + HEIGHT(c))) < snap)
-          ny = selmon->wy + selmon->wh - HEIGHT(c);
+        m = recttomon(nx, ny, WIDTH(c), HEIGHT(c));
+        if (abs(m->wx - nx) < snap)
+          nx = m->wx;
+        else if (abs((m->wx + m->ww) - (nx + WIDTH(c))) < snap)
+          nx = m->wx + m->ww - WIDTH(c);
+        if (abs(m->wy - ny) < snap)
+          ny = m->wy;
+        else if (abs((m->wy + m->wh) - (ny + HEIGHT(c))) < snap)
+          ny = m->wy + m->wh - HEIGHT(c);
         if (!c->isfloating && selmon->lt[selmon->sellt]->arrange &&
             (abs(nx - c->x) > snap || abs(ny - c->y) > snap))
           togglefloating(NULL);
@@ -2595,7 +2600,10 @@ void placemouse(const Arg* arg) {
   if (arg->i == 2)  // warp cursor to client center
     XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, WIDTH(c) / 2, HEIGHT(c) / 2);
 
-  if (!getrootptr(&x, &y)) return;
+  if (!getrootptr(&x, &y)) {
+    XUngrabPointer(dpy, CurrentTime);
+    return;
+  }
 
   do {
     XMaskEvent(dpy, MOUSEMASK | ExposureMask | SubstructureRedirectMask, &ev);
@@ -2922,10 +2930,10 @@ void resizemouse(const Arg* arg) {
 
         nw = MAX(ev.xmotion.x - ocx - 2 * c->bw + 1, 1);
         nh = MAX(ev.xmotion.y - ocy - 2 * c->bw + 1, 1);
-        if (c->mon->wx + nw >= selmon->wx &&
-            c->mon->wx + nw <= selmon->wx + selmon->ww &&
-            c->mon->wy + nh >= selmon->wy &&
-            c->mon->wy + nh <= selmon->wy + selmon->wh) {
+        if (c->mon->wx + nw >= c->mon->wx &&
+            c->mon->wx + nw <= c->mon->wx + c->mon->ww &&
+            c->mon->wy + nh >= c->mon->wy &&
+            c->mon->wy + nh <= c->mon->wy + c->mon->wh) {
           if (!c->isfloating && selmon->lt[selmon->sellt]->arrange &&
               (abs(nw - c->w) > snap || abs(nh - c->h) > snap))
             togglefloating(NULL);
