@@ -65,6 +65,7 @@ static const char orange[] = "#caaa6a";
 static const char yellow[] = "#EBCB8B";
 static const char pink[] = "#c678dd";
 static const char col_borderbar[] = "#14171c";  // inner border
+static const char rootbg[] = "#272c33";  // default root window background
 
 static const char* colors[][3] = {
   /*                     fg       bg      border */

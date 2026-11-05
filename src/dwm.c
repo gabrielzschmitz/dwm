@@ -3301,6 +3301,10 @@ void setup(void) {
   drw = drw_create(dpy, screen, root, sw, sh);
   if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
     die("no fonts could be loaded.");
+  Clr rootclr;
+  drw_clr_create(drw, &rootclr, rootbg);
+  XSetWindowBackground(dpy, root, rootclr.pixel);
+  XClearWindow(dpy, root);
   lrpad = drw->fonts->h;
   bh = drw->fonts->h + 2 + vertpadbar + borderpx * 2;
   th = vertpadtab;
