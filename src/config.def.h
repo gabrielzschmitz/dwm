@@ -102,11 +102,15 @@ const char* spideacmd[] = {"st", "-c",    "spidea", "-T",   "Idea Sandbox",
 const char* spfmcmd[] = {"st", "-c",     "spfm", "-T",  "File Manager",
                          "-g", "120x30", "-e",   "nnn", NULL};
 
+const char* sptomatoccmd[] = {"st",       "-c", "sptomatoc", "-T",
+                              "Tomato.C", "-g", "120x38",    NULL};
+
 static Sp scratchpads[] = {
   /* class, cmd  */
   {"spterm", sptermcmd},
   {"spidea", spideacmd},
   {"spfm", spfmcmd},
+  {"sptomatoc", sptomatoccmd},
 };
 
 /* tagging */
@@ -141,10 +145,10 @@ static const Rule rules[] = {
     *	WM_NAME(STRING) = title
     */
   /* class, instance ,title ,tags mask ,iscentered ,isfloating ,monitor */
-  {"Tomato.C", NULL, NULL, 1 << 8, 1, 1, -1},
   {"spterm", NULL, NULL, SPTAG(0), 1, 1, -1},
   {"spidea", NULL, NULL, SPTAG(1), 1, 1, -1},
   {"spfm", NULL, NULL, SPTAG(2), 1, 1, -1},
+  {"sptomatoc", NULL, NULL, SPTAG(3), 1, 1, -1},
 };
 
 /* layout(s) */
@@ -294,6 +298,7 @@ static const Key keys[] = {
   {Mod1Mask, XK_Return, togglescratch, {.ui = 0}},
   {Mod1Mask, XK_i, togglescratch, {.ui = 1}},
   {Mod1Mask, XK_f, togglescratch, {.ui = 2}},
+  {Mod1Mask, XK_t, togglescratch, {.ui = 3}},
 
   // kill dwm
   {MODKEY | ShiftMask, XK_c, spawn, SHCMD("pkill dwm")},
