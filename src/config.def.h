@@ -211,6 +211,10 @@ static const Key keys[] = {
   {0, XF86XK_MonBrightnessUp, spawn, SHCMD("brightnessctl set 10%+")},
   {0, XF86XK_MonBrightnessDown, spawn, SHCMD("brightnessctl set 10%-")},
   {Mod4Mask | ShiftMask, XK_Copilot, spawn, SHCMD("powermenu")},
+  {0, XF86XK_AudioPlay, spawn, SHCMD("mediatoggle play-pause")},
+  {0, XF86XK_AudioPause, spawn, SHCMD("mediatoggle play-pause")},
+  {0, XF86XK_AudioNext, spawn, SHCMD("mediatoggle next")},
+  {0, XF86XK_AudioPrev, spawn, SHCMD("mediatoggle previous")},
 
   // screenshot fullscreen and cropped
   {MODKEY | ControlMask, XK_p, spawn,
