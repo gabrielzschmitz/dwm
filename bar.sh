@@ -158,7 +158,7 @@ battery() {
     printf '^c%s^^b%s^ 󱊣 ' "$black" "$green"
     printf '^c%s^^b%s^ %s%%' "$green" "$black" "$capacity"
 
-    [[ "$status" == "Charging" ]] && printf '^c%s^+' "$yellow"
+    [[ "$status" == "Charging" ]] && printf '^c%s^+' "$green"
     printf '^b%s^' "$black"
     return
   done
