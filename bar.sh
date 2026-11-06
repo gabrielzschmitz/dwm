@@ -11,6 +11,7 @@ black='#14171c'
 white='#abb2bf'
 grey='#282c34'
 blue='#7aa2f7'
+cyan='#56b6c2'
 green='#7eca9c'
 red='#d47d85'
 orange='#caaa6a'
@@ -40,14 +41,14 @@ pomodoro() {
   output=${output#"${output%%[![:space:]]*}"}
   [[ -n "$output" ]] || return
 
-  printf '^c%s^^b%s^ %s^b%s^' "$black" "$pink" "$output" "$black"
+  printf '^c%s^^b%s^ %s^b%s^' "$black" "$red" "$output" "$black"
 }
 
 cpu() {
   local load
   load=$(awk '{ print $1 }' /proc/loadavg)
 
-  printf '^c%s^^b%s^ 󰻠 ' "$black" "$green"
+  printf '^c%s^^b%s^  ' "$black" "$cyan"
   printf '^c%s^^b%s^ %s^b%s^' "$white" "$grey" "$load" "$black"
 }
 
@@ -79,7 +80,7 @@ mem() {
   }
   ' /proc/meminfo)
 
-  printf '^c%s^^b%s^  ' "$black" "$pink"
+  printf '^c%s^^b%s^ 󰘚 ' "$black" "$pink"
   printf '^c%s^^b%s^ %s^b%s^' "$white" "$grey" "${used:-N/A}" "$black"
 }
 
@@ -96,15 +97,15 @@ volume() {
     volume=$(awk -v v="${BASH_REMATCH[1]}" 'BEGIN { printf "%.0f", v * 100 }')
 
     if (( volume <= 33 )); then
-      icon=""
+      icon="󰕿"
     elif (( volume <= 66 )); then
-      icon=""
+      icon="󰖀"
     else
-      icon=""
+      icon="󰕾"
     fi
   fi
 
-  printf '^c%s^^b%s^ %s  ' "$black" "$orange" "$icon"
+  printf '^c%s^^b%s^ %s ' "$black" "$orange" "$icon"
   printf '^c%s^^b%s^ %s%%^b%s^' "$orange" "$black" "$volume" "$black"
 }
 
@@ -117,10 +118,10 @@ battery() {
     capacity=$(cat "$battery_dir/capacity" 2>/dev/null) || continue
     status=$(cat "$battery_dir/status" 2>/dev/null || true)
 
-    printf '^c%s^^b%s^ 󰁹 ' "$black" "$red"
-    printf '^c%s^^b%s^ %s%%' "$red" "$black" "$capacity"
+    printf '^c%s^^b%s^ 󱊣 ' "$black" "$green"
+    printf '^c%s^^b%s^ %s%%' "$green" "$black" "$capacity"
 
-    [[ "$status" == "Charging" ]] && printf '^c%s^+' "$green"
+    [[ "$status" == "Charging" ]] && printf '^c%s^+' "$yellow"
     printf '^b%s^' "$black"
     return
   done
