@@ -168,7 +168,7 @@ clock() {
 while true; do
   status=""
 
-  for module in pomodoro cpu mem volume battery brightness network clock; do
+  for module in pomodoro volume battery cpu mem clock; do
     output=$("$module")
 
     if [[ -n "$output" ]]; then
