@@ -1150,7 +1150,7 @@ Monitor* dirtomon(int dir) {
  * @return Left edge of the drawn status area.
  */
 int drawstatusbar(Monitor* m, int bh, char* stext) {
-  int ret, i, w, x, len;
+  int ret, i, w, x, len, stw;
   short isCode = 0;
   char* text;
   char* p;
@@ -1185,12 +1185,13 @@ int drawstatusbar(Monitor* m, int bh, char* stext) {
   text = p;
 
   w += horizpadbar;
+  stw = (showsystray && m == systraytomon(m)) ? getsystraywidth() : 0;
   if (floatbar) {
     ret = x = m->ww - m->gappov * 2 - borderpx - w;
-    x = m->ww - m->gappov * 2 - borderpx - w - getsystraywidth();
+    x = m->ww - m->gappov * 2 - borderpx - w - stw;
   } else {
     ret = x = m->ww - borderpx - w;
-    x = m->ww - w - getsystraywidth();
+    x = m->ww - w - stw;
   }
 
   drw_setscheme(drw, scheme[LENGTH(colors)]);
