@@ -47,7 +47,7 @@ cpu() {
   local load
   load=$(awk '{ print $1 }' /proc/loadavg)
 
-  printf '^c%s^^b%s^ CPU ' "$black" "$green"
+  printf '^c%s^^b%s^ 󰻠 ' "$black" "$green"
   printf '^c%s^^b%s^ %s^b%s^' "$white" "$grey" "$load" "$black"
 }
 
@@ -79,8 +79,8 @@ mem() {
   }
   ' /proc/meminfo)
 
-  printf '^c%s^^b%s^ ' "$pink" "$black"
-  printf '^c%s^%s' "$pink" "${used:-N/A}"
+  printf '^c%s^^b%s^  ' "$black" "$pink"
+  printf '^c%s^^b%s^ %s^b%s^' "$white" "$grey" "${used:-N/A}" "$black"
 }
 
 volume() {
@@ -117,8 +117,8 @@ battery() {
     capacity=$(cat "$battery_dir/capacity" 2>/dev/null) || continue
     status=$(cat "$battery_dir/status" 2>/dev/null || true)
 
-    printf '^c%s^^b%s^ BAT ' "$black" "$red"
-    printf '^c%s^^b%s^ %s%%' "$white" "$grey" "$capacity"
+    printf '^c%s^^b%s^ 󰁹 ' "$black" "$red"
+    printf '^c%s^^b%s^ %s%%' "$red" "$black" "$capacity"
 
     [[ "$status" == "Charging" ]] && printf '^c%s^+' "$green"
     printf '^b%s^' "$black"
