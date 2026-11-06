@@ -41,7 +41,7 @@ pomodoro() {
   output=${output#"${output%%[![:space:]]*}"}
   [[ -n "$output" ]] || return
 
-  printf '^c%s^^b%s^ %s^b%s^' "$black" "$red" "$output" "$black"
+  printf '^c%s^^b%s^ %s ^b%s^' "$black" "$red" "$output" "$black"
 }
 
 cpu_file="${XDG_RUNTIME_DIR:-/tmp}/dwm-cpu"
