@@ -86,7 +86,7 @@ cpu() {
   fi
 
   printf '^c%s^^b%s^  ' "$black" "$cyan"
-  printf '^c%s^^b%s^ %s%%^b%s^' "$white" "$grey" "$percentage" "$black"
+  printf '^c%s^^b%s^ %s%% ^b%s^' "$white" "$grey" "$percentage" "$black"
 }
 
 brightness() {
@@ -118,7 +118,7 @@ mem() {
   ' /proc/meminfo)
 
   printf '^c%s^^b%s^ 󰘚 ' "$black" "$pink"
-  printf '^c%s^^b%s^ %s^b%s^' "$white" "$grey" "${used:-N/A}" "$black"
+  printf '^c%s^^b%s^ %s ^b%s^' "$white" "$grey" "${used:-N/A}" "$black"
 }
 
 volume() {
@@ -200,7 +200,7 @@ network() {
 
 clock() {
   printf '^c%s^^b%s^ 󱑆 ' "$black" "$darkblue"
-  printf '^c%s^^b%s^ %s' "$black" "$blue" "$(date '+%H:%M')"
+  printf '^c%s^^b%s^ %s ' "$black" "$blue" "$(date '+%H:%M')"
 }
 
 while true; do
