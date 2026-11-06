@@ -44,12 +44,49 @@ pomodoro() {
   printf '^c%s^^b%s^ %s^b%s^' "$black" "$red" "$output" "$black"
 }
 
+cpu_file="${XDG_RUNTIME_DIR:-/tmp}/dwm-cpu"
+
 cpu() {
-  local load
-  load=$(awk '{ print $1 }' /proc/loadavg)
+  local user nice system idle iowait irq softirq steal rest
+  local total busy prev_total prev_busy percentage history sorted count median
+  local -a samples
+
+  read -r _ user nice system idle iowait irq softirq steal rest < /proc/stat
+
+  total=$((user + nice + system + idle + iowait + irq + softirq + steal))
+  busy=$((total - idle - iowait))
+
+  if [[ -r "$cpu_file" ]]; then
+    read -r prev_total prev_busy history < "$cpu_file"
+  fi
+
+  percentage=-1
+  if (( ${prev_total:-0} > 0 && total > prev_total )); then
+    percentage=$(( (busy - prev_busy) * 100 / (total - prev_total) ))
+  fi
+
+  read -r -a samples <<< "${history:-}"
+  if (( percentage >= 0 )); then
+    samples+=("$percentage")
+  fi
+  while (( ${#samples[@]} > 5 )); do
+    samples=("${samples[@]:1}")
+  done
+
+  printf '%s %s %s\n' "$total" "$busy" "${samples[*]}" > "$cpu_file"
+
+  count=${#samples[@]}
+  if (( count > 0 )); then
+    median=$(printf '%s\n' "${samples[@]}" | sort -n | awk -v n="$count" '
+      { a[NR] = $1 }
+      END { print (n % 2) ? a[(n + 1) / 2] : int((a[n / 2] + a[n / 2 + 1]) / 2) }')
+    percentage=$median
+  else
+    percentage=0
+  fi
 
   printf '^c%s^^b%s^  ' "$black" "$cyan"
-  printf '^c%s^^b%s^ %s^b%s^' "$white" "$grey" "$load" "$black"
+  printf '^c%s^^b%s^ %s%%^b%s^' "$white" "$grey" "$percentage" "$black"
 }
 
 brightness() {
