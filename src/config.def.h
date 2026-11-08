@@ -215,6 +215,9 @@ static const Key keys[] = {
   {0, XF86XK_AudioPause, spawn, SHCMD("mediatoggle play-pause")},
   {0, XF86XK_AudioNext, spawn, SHCMD("mediatoggle next")},
   {0, XF86XK_AudioPrev, spawn, SHCMD("mediatoggle previous")},
+  {Mod4Mask, XF86XK_AudioLowerVolume, spawn, SHCMD("mediatoggle volume-down")},
+  {Mod4Mask, XF86XK_AudioMute, spawn, SHCMD("mediatoggle mute")},
+  {Mod4Mask, XF86XK_AudioRaiseVolume, spawn, SHCMD("mediatoggle volume-up")},
 
   // screenshot fullscreen and cropped
   {MODKEY | ControlMask, XK_p, spawn,
