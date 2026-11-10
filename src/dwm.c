@@ -76,6 +76,7 @@
 #define TAGSLENGTH (LENGTH(tags))
 #define TEXTW(X) (drw_fontset_getwidth(drw, (X)) + lrpad)
 #define MAXTABS 50
+#define TAB_CLOSE_BTN " "
 
 #define SYSTEM_TRAY_REQUEST_DOCK 0
 
@@ -214,6 +215,7 @@ struct Client {
   Client* snext;         /**< Next client in the focus stack. */
   Monitor* mon;          /**< Monitor owning the client. */
   Window win;            /**< X window handle. */
+  Window tabwin;         /**< Title tab above floating windows. */
 };
 
 /** @brief A keyboard binding. */
@@ -281,6 +283,7 @@ static void dragcfact(const Arg* arg);
 static void drawbar(Monitor* m);
 static void drawbars(void);
 static int drawstatusbar(Monitor* m, int bh, char* text);
+static void drawclienttab(Client* c);
 static void drawtab(Monitor* m);
 static void drawtabs(void);
 static void enternotify(XEvent* e);
@@ -344,6 +347,7 @@ static void setviewport(void);
 static void seturgent(Client* c, int urg);
 static void show(Client* c);
 static void showhide(Client* c);
+static int showtabs(Monitor* m);
 static void showtagpreview(int tag);
 static void spawn(const Arg* arg);
 static void switchtag(void);
@@ -383,6 +387,7 @@ static void view(const Arg* arg);
 static Client* wintoclient(Window w);
 static Monitor* wintomon(Window w);
 static Client* wintosystrayicon(Window w);
+static Client* wintotab(Window w);
 static int xerror(Display* dpy, XErrorEvent* ee);
 static int xerrordummy(Display* dpy, XErrorEvent* ee);
 static int xerrorstart(Display* dpy, XErrorEvent* ee);
@@ -665,7 +670,7 @@ void attachstack(Client* c) {
  */
 void buttonpress(XEvent* e) {
   unsigned int i, x, click;
-  int loop;
+  int closew, loop;
   Arg arg = {0};
   Client* c;
   Monitor* m;
@@ -718,7 +723,7 @@ void buttonpress(XEvent* e) {
     i = 0;
     x = 0;
     for (c = selmon->clients; c; c = c->next) {
-      if (!ISVISIBLE(c)) continue;
+      if (!ISVISIBLE(c) || c->isfloating) continue;
       x += selmon->tab_widths[i];
       if (ev->x > x)
         ++i;
@@ -737,6 +742,11 @@ void buttonpress(XEvent* e) {
       }
       if (ev->x >= x) click = ClkTabPrev + loop;
     }
+  } else if ((c = wintotab(ev->window))) {
+    closew = TEXTW(TAB_CLOSE_BTN) - lrpad + horizpadtabo;
+    focus(c);
+    restack(c->mon);
+    click = (ev->x >= MAX(WIDTH(c) - closew, 0)) ? ClkTabClose : ClkClientWin;
   } else if ((c = wintoclient(ev->window))) {
     focus(c);
     restack(selmon);
@@ -1773,6 +1783,58 @@ static int cmpint(const void* p1, const void* p2) {
 }
 
 /**
+ * @brief Draw a title tab above a floating client.
+ *
+ * @param c          Client whose tab is drawn.
+ */
+void drawclienttab(Client* c) {
+  XWindowChanges wc;
+  XSetWindowAttributes wa = {
+    .override_redirect = True,
+    .background_pixmap = ParentRelative,
+    .event_mask = ButtonPressMask | ExposureMask};
+  Clr closeclr[3];
+  unsigned int textw;
+  int closew, w;
+
+  if (!showtabs(c->mon) || !c->isfloating || c->isfullscreen ||
+      !ISVISIBLE(c) || HIDDEN(c)) {
+    if (c->tabwin) XUnmapWindow(dpy, c->tabwin);
+    return;
+  }
+
+  w = MAX(WIDTH(c), 1);
+  closew = TEXTW(TAB_CLOSE_BTN) - lrpad + horizpadtabo;
+  if (!c->tabwin) {
+    c->tabwin = XCreateWindow(
+      dpy, root, c->x, c->y - th, w, th, 0, DefaultDepth(dpy, screen),
+      CopyFromParent, DefaultVisual(dpy, screen),
+      CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
+    XDefineCursor(dpy, c->tabwin, cursor[CurNormal]->cursor);
+  }
+
+  XMoveResizeWindow(dpy, c->tabwin, c->x, c->y - th, w, th);
+  drw_setscheme(drw, scheme[c == c->mon->sel ? TabSel : TabNorm]);
+  drw_rect(drw, 0, 0, w, th, 1, 1);
+  textw = (w > closew + horizpadtabo) ? w - closew - horizpadtabo : 0;
+  drw_text(drw, horizpadtabo / 2, vertpadbar / 2, textw, th - vertpadbar,
+           horizpadtabi / 2, c->name, 0);
+  memcpy(closeclr, scheme[c == c->mon->sel ? TabSel : TabNorm],
+         sizeof closeclr);
+  closeclr[ColFg] = scheme[SchemeBtnClose][ColFg];
+  drw_setscheme(drw, closeclr);
+  drw_text(drw, MAX(w - closew, 0) + horizpadtabo / 2, vertpadbar / 2, closew,
+           th - vertpadbar, 0, TAB_CLOSE_BTN, 0);
+  drw_setscheme(drw, scheme[c == c->mon->sel ? TabSel : TabNorm]);
+  drw_map(drw, c->tabwin, 0, 0, w, th);
+
+  wc.sibling = c->win;
+  wc.stack_mode = Above;
+  XConfigureWindow(dpy, c->tabwin, CWSibling | CWStackMode, &wc);
+  XMapWindow(dpy, c->tabwin);
+}
+
+/**
  * @brief Draw the tab bar listing visible clients on a monitor.
  *
  * @param m          Monitor whose tab bar is drawn.
@@ -1782,7 +1844,7 @@ void drawtab(Monitor* m) {
   int i;
   char* btn_prev = "";
   char* btn_next = "";
-  char* btn_close = " ";
+  char* btn_close = TAB_CLOSE_BTN;
   int buttons_w = 0;
   int sorted_label_widths[MAXTABS];
   int tot_width = 0;
@@ -1798,7 +1860,7 @@ void drawtab(Monitor* m) {
   /* Calculates number of labels and their width */
   m->ntabs = 0;
   for (c = m->clients; c; c = c->next) {
-    if (!ISVISIBLE(c)) continue;
+    if (!ISVISIBLE(c) || c->isfloating) continue;
     m->tab_widths[m->ntabs] =
       MIN(TEXTW(c->name) - lrpad + horizpadtabi + horizpadtabo, 250);
     tot_width += m->tab_widths[m->ntabs];
@@ -1826,7 +1888,7 @@ void drawtab(Monitor* m) {
   drw_rect(drw, 0, 0, mw, th, 1, 1);
 
   for (c = m->clients; c; c = c->next) {
-    if (!ISVISIBLE(c)) continue;
+    if (!ISVISIBLE(c) || c->isfloating) continue;
     if (i >= m->ntabs) break;
     if (m->tab_widths[i] > maxsize) m->tab_widths[i] = maxsize;
     w = m->tab_widths[i];
@@ -1859,6 +1921,8 @@ void drawtab(Monitor* m) {
   x += w;
 
   drw_map(drw, m->tabwin, 0, 0, m->ww, th);
+
+  for (c = m->clients; c; c = c->next) drawclienttab(c);
 }
 
 /**
@@ -1890,12 +1954,21 @@ void enternotify(XEvent* e) {
  * @param e          X expose event.
  */
 void expose(XEvent* e) {
+  Client* c;
   Monitor* m;
   XExposeEvent* ev = &e->xexpose;
 
+  if (ev->count == 0 && (c = wintotab(ev->window))) {
+    drawclienttab(c);
+    return;
+  }
   if (ev->count == 0 && (m = wintomon(ev->window))) {
-    drawbar(m);
-    if (m == selmon) updatesystray();
+    if (ev->window == m->tabwin)
+      drawtab(m);
+    else {
+      drawbar(m);
+      if (m == selmon) updatesystray();
+    }
   }
 }
 
@@ -1989,8 +2062,9 @@ void focusstack(const Arg* arg) {
 void focuswin(const Arg* arg) {
   int iwin = arg->i;
   Client* c = NULL;
-  for (c = selmon->clients; c && (iwin || !ISVISIBLE(c)); c = c->next) {
-    if (ISVISIBLE(c)) --iwin;
+  for (c = selmon->clients; c && (iwin || !ISVISIBLE(c) || c->isfloating);
+       c = c->next) {
+    if (ISVISIBLE(c) && !c->isfloating) --iwin;
   };
   if (c) {
     focus(c);
@@ -2893,6 +2967,7 @@ void resizeclient(Client* c, int x, int y, int w, int h) {
   XConfigureWindow(dpy, c->win, CWX | CWY | CWWidth | CWHeight | CWBorderWidth,
                    &wc);
   configure(c);
+  drawclienttab(c);
   XSync(dpy, False);
 }
 
@@ -2986,8 +3061,14 @@ void restack(Monitor* m) {
   drawbar(m);
   drawtab(m);
   if (!m->sel) return;
-  if (m->sel->isfloating || !m->lt[m->sellt]->arrange)
+  if (m->sel->isfloating || !m->lt[m->sellt]->arrange) {
     XRaiseWindow(dpy, m->sel->win);
+    if (m->sel->tabwin) {
+      wc.sibling = m->sel->win;
+      wc.stack_mode = Above;
+      XConfigureWindow(dpy, m->sel->tabwin, CWSibling | CWStackMode, &wc);
+    }
+  }
   if (m->lt[m->sellt]->arrange) {
     wc.stack_mode = Below;
     wc.sibling = m->barwin;
@@ -3802,6 +3883,7 @@ void unmanage(Client* c, int destroyed) {
     XSetErrorHandler(xerror);
     XUngrabServer(dpy);
   }
+  if (c->tabwin) XDestroyWindow(dpy, c->tabwin);
   free(c);
   focus(NULL);
   updateclientlist();
@@ -3901,28 +3983,40 @@ static int showtablayout(void (*arrange)(Monitor*)) {
 }
 
 /**
+ * @brief Decide whether a monitor should show the main tab bar.
+ *
+ * @param m          Monitor to test.
+ * @return 1 when the tab bar is visible, 0 otherwise.
+ */
+static int showtabs(Monitor* m) {
+  Client* c;
+  int nvis = 0;
+
+  for (c = m->clients; c; c = c->next) {
+    if (ISVISIBLE(c)) ++nvis;
+  }
+
+  return m->showtab == showtab_always ||
+         ((m->showtab == showtab_auto) && (nvis > 1) &&
+          (m->lt[m->sellt]->arrange == monocle)) ||
+         ((m->showtab == showtab_nmodes) &&
+          showtablayout(m->lt[m->sellt]->arrange) &&
+          (nvis > 0 || showtab_nmodes_empty));
+}
+
+/**
  * @brief Compute the bar and tab geometry and the usable window area.
  *
  * @param m          Monitor to update.
  */
 void updatebarpos(Monitor* m) {
   Client* c;
-  int nvis = 0;
   int tabs, top, bottom;
 
   m->wy = m->my;
   m->wh = m->mh;
 
-  for (c = m->clients; c; c = c->next) {
-    if (ISVISIBLE(c)) ++nvis;
-  }
-
-  tabs = m->showtab == showtab_always ||
-         ((m->showtab == showtab_auto) && (nvis > 1) &&
-          (m->lt[m->sellt]->arrange == monocle)) ||
-         ((m->showtab == showtab_nmodes) &&
-          showtablayout(m->lt[m->sellt]->arrange) &&
-          (nvis > 0 || showtab_nmodes_empty));
+  tabs = showtabs(m);
 
   /* Hide window borders while the tab bar is visible. */
   for (c = m->clients; c; c = c->next) {
@@ -4408,6 +4502,23 @@ Client* wintosystrayicon(Window w) {
 }
 
 /**
+ * @brief Find the client that owns a per-window tab.
+ *
+ * @param w          Tab window to look up.
+ * @return Matching client, or NULL if the window is not a client tab.
+ */
+Client* wintotab(Window w) {
+  Client* c;
+  Monitor* m;
+
+  if (!w) return NULL;
+  for (m = mons; m; m = m->next)
+    for (c = m->clients; c; c = c->next)
+      if (c->tabwin == w) return c;
+  return NULL;
+}
+
+/**
  * @brief Find the monitor that owns a window.
  *
  * @param w          Window to look up.
@@ -4421,6 +4532,7 @@ Monitor* wintomon(Window w) {
   if (w == root && getrootptr(&x, &y)) return recttomon(x, y, 1, 1);
   for (m = mons; m; m = m->next)
     if (w == m->barwin || w == m->tabwin) return m;
+  if ((c = wintotab(w))) return c->mon;
   if ((c = wintoclient(w))) return c->mon;
   return selmon;
 }
