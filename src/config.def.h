@@ -30,8 +30,6 @@ static const int systraypinningfailfirst =
   1; /* 1: if pinning fails,display systray on the 1st monitor,False: display systray on last monitor*/
 static const int showsystray = 1; /* 0 means no systray */
 static const int showbar = 1;     /* 0 means no bar */
-static const int showtab = showtab_auto;
-static const int toptab = 1; /* 0 means bottom tab */
 static const int floatbar =
   1; /* 1 means the bar will float(don't have padding),0 means the bar have padding */
 static const int topbar = 1; /* 0 means bottom bar */
@@ -163,6 +161,17 @@ static const int lockfullscreen =
 #define FORCE_VSPLIT \
   1 /* nrowgrid layout: force two clients to always split vertically */
 #include "functions.h"
+
+static const int showtab = showtab_nmodes;
+static const int toptab = 1; /* 0 means bottom tab */
+/* layouts that show the tab bar when showtab = showtab_nmodes */
+static void (*const showtab_layouts[])(Monitor*) = {
+  monocle,
+  NULL,
+};
+
+/* 1 means keep the tab bar in showtab_nmodes mode when the monitor has no windows */
+static const int showtab_nmodes_empty = 0;
 
 static const Layout layouts[] = {
   /* symbol     arrange function */

@@ -624,8 +624,9 @@ void arrangemon(Monitor* m) {
   XMoveResizeWindow(dpy, m->tabwin, m->wx + m->gappov, m->ty,
                     m->ww - 2 * m->gappov, th);
   XMoveWindow(dpy, m->tagwin, m->wx + m->gappov,
-              m->by + (m->topbar ? (bh + m->gappoh)
-                                 : (-(m->mh / scalepreview) - m->gappoh)));
+              m->topbar
+                ? m->wy + m->gappoh
+                : m->by - (m->mh / scalepreview) - m->gappoh);
   snprintf(m->ltsymbol, sizeof m->ltsymbol, "%s", m->lt[m->sellt]->symbol);
   if (m->lt[m->sellt]->arrange) m->lt[m->sellt]->arrange(m);
 }
@@ -3884,6 +3885,22 @@ void updatepreview(void) {
 }
 
 /**
+ * @brief Check whether a layout shows the tab bar in showtab_nmodes mode.
+ *
+ * @param arrange Layout arrange function.
+ * @return 1 if the layout is listed in showtab_layouts[], 0 otherwise.
+ */
+static int showtablayout(void (*arrange)(Monitor*)) {
+  size_t i;
+
+  for (i = 0; showtab_layouts[i]; i++) {
+    if (showtab_layouts[i] == arrange) return 1;
+  }
+
+  return 0;
+}
+
+/**
  * @brief Compute the bar and tab geometry and the usable window area.
  *
  * @param m          Monitor to update.
@@ -3891,6 +3908,7 @@ void updatepreview(void) {
 void updatebarpos(Monitor* m) {
   Client* c;
   int nvis = 0;
+  int tabs, top, bottom;
 
   m->wy = m->my;
   m->wh = m->mh;
@@ -3899,33 +3917,63 @@ void updatebarpos(Monitor* m) {
     if (ISVISIBLE(c)) ++nvis;
   }
 
-  if (m->showtab == showtab_always ||
-      ((m->showtab == showtab_auto) && (nvis > 1) &&
-       (m->lt[m->sellt]->arrange == monocle))) {
-    m->topbar = !toptab;
-    m->wh -=
-      th + ((m->topbar == toptab && m->showbar) ? 0 : m->gappoh) - m->gappoh;
-    m->ty = m->toptab ? m->wy + ((m->topbar && m->showbar) ? 0 : m->gappoh)
-                      : m->wy + m->wh - m->gappoh;
-    if (m->toptab)
-      m->wy += th + ((m->topbar && m->showbar) ? 0 : m->gappoh) - m->gappoh;
-  } else {
-    m->ty = -th - m->gappoh;
-    m->topbar = topbar;
+  tabs = m->showtab == showtab_always ||
+         ((m->showtab == showtab_auto) && (nvis > 1) &&
+          (m->lt[m->sellt]->arrange == monocle)) ||
+         ((m->showtab == showtab_nmodes) &&
+          showtablayout(m->lt[m->sellt]->arrange) &&
+          (nvis > 0 || showtab_nmodes_empty));
+
+  /* Hide window borders while the tab bar is visible. */
+  for (c = m->clients; c; c = c->next) {
+    int bw = (tabs && !c->isfullscreen) ? 0 : m->borderpx;
+    if (c->bw == bw) continue;
+    c->bw = bw;
+    XSetWindowBorderWidth(dpy, c->win, c->bw);
   }
-  if (m->showbar) {
-    if (floatbar) {
-      m->wh = m->wh - m->gappoh - bh;
-      m->by = m->topbar ? m->wy + m->gappoh : m->wy + m->wh;
+
+  m->topbar = topbar;
+  top = m->my;
+  bottom = m->my + m->mh;
+
+  /* Stack top elements outwards: bar, tab, then windows. */
+  if (m->showbar && m->topbar) {
+    m->by = top + (floatbar ? m->gappoh : 0);
+    top = m->by + bh;
+  }
+  if (tabs && m->toptab) {
+    top += m->gappoh;
+    m->ty = top;
+    top += th;
+  }
+
+  /* Stack bottom elements outwards: windows, tab, then bar. */
+  if (m->showbar && !m->topbar) {
+    bottom -= floatbar ? m->gappoh : 0;
+    m->by = bottom - bh;
+    bottom = m->by;
+  }
+  if (tabs && !m->toptab) {
+    bottom -= m->gappoh;
+    m->ty = bottom - th;
+    bottom = m->ty;
+  }
+
+  m->wy = top;
+  m->wh = bottom - top;
+
+  /* Keep windows flush against the tab bar. */
+  if (tabs) {
+    if (m->toptab) {
+      m->wy -= m->gappoh;
+      m->wh += m->gappoh;
     } else {
-      m->wh = m->wh - bh;
-      m->by = m->topbar ? m->wy : m->wy + m->wh;
+      m->wh += m->gappoh;
     }
-    if (m->topbar) {
-      m->wy = floatbar ? bh + gappoh : bh;
-    }
-  } else
-    m->by = -bh - m->gappoh;
+  }
+
+  if (!m->showbar) m->by = -bh - m->gappoh;
+  if (!tabs) m->ty = -th - m->gappoh;
 }
 
 /**
