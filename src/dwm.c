@@ -218,6 +218,7 @@ struct Client {
   Window tabwin;         /**< Title tab above floating windows. */
   int tabdrawn, tabx, taby, tabw, tabselected;
   char tabname[256]; /**< Last title drawn in the floating tab. */
+  int tab_label_width; /**< Cached title width for the tab bar. */
 };
 
 /** @brief A keyboard binding. */
@@ -472,6 +473,12 @@ struct Monitor {
   int ntabs;                   /**< Number of open tabs. */
   int tab_widths[MAXTABS];     /**< Width of each tab. */
   int tab_btn_w[3];            /**< Width of the tab buttons. */
+  int tab_btns_init;           /**< Whether tab button widths are cached. */
+  int tabbar_valid, tabbar_mw, tabbar_ww, tabbar_ntabs;
+  int tabbar_widths[MAXTABS];
+  Window tabbar_clients[MAXTABS];
+  int tabbar_selected[MAXTABS];
+  char tabbar_names[MAXTABS][256];
   const Layout* lt[2];         /**< Layouts for the two layout slots. */
   Pertag* pertag;              /**< Per-tag state. */
 };
@@ -1774,13 +1781,13 @@ void drawtabs(void) {
  *
  * @param p1         First integer.
  * @param p2         Second integer.
- * @return Non-zero when the first value is greater than the second.
+ * @return Negative, zero, or positive when first value is less than, equal to,
+ *         or greater than the second.
  */
 static int cmpint(const void* p1, const void* p2) {
-  /* The actual arguments to this function are "pointers to
-     pointers to char", but strcmp(3) arguments are "pointers
-     to char", hence the following cast plus dereference */
-  return *((int*)p1) > *(int*)p2;
+  int a = *(const int*)p1;
+  int b = *(const int*)p2;
+  return (a > b) - (a < b);
 }
 
 /**
@@ -1862,20 +1869,41 @@ void drawtab(Monitor* m) {
   int x = 0;
   int w = 0;
   int mw = floatbar ? m->ww - 2 * m->gappov : m->ww;
-  buttons_w += TEXTW(btn_prev) - lrpad + horizpadtabo;
-  buttons_w += TEXTW(btn_next) - lrpad + horizpadtabo;
-  buttons_w += TEXTW(btn_close) - lrpad + horizpadtabo;
+  if (!m->tab_btns_init) {
+    m->tab_btn_w[0] = TEXTW(btn_prev) - lrpad + horizpadtabo;
+    m->tab_btn_w[1] = TEXTW(btn_next) - lrpad + horizpadtabo;
+    m->tab_btn_w[2] = TEXTW(btn_close) - lrpad + horizpadtabo;
+    m->tab_btns_init = 1;
+  }
+  buttons_w = m->tab_btn_w[0] + m->tab_btn_w[1] + m->tab_btn_w[2];
   tot_width = buttons_w;
 
   /* Calculates number of labels and their width */
   m->ntabs = 0;
   for (c = m->clients; c; c = c->next) {
     if (!ISVISIBLE(c) || c->isfloating) continue;
-    m->tab_widths[m->ntabs] =
-      MIN(TEXTW(c->name) - lrpad + horizpadtabi + horizpadtabo, 250);
+    m->tab_widths[m->ntabs] = c->tab_label_width;
     tot_width += m->tab_widths[m->ntabs];
     ++m->ntabs;
     if (m->ntabs >= MAXTABS) break;
+  }
+
+  if (m->tabbar_valid && m->tabbar_mw == mw && m->tabbar_ww == m->ww &&
+      m->tabbar_ntabs == m->ntabs) {
+    for (i = 0, c = m->clients; c && i < m->ntabs; c = c->next) {
+      if (!ISVISIBLE(c) || c->isfloating) continue;
+      if (m->tabbar_clients[i] != c->win ||
+          m->tabbar_selected[i] != (c == m->sel) ||
+          strcmp(m->tabbar_names[i], c->name))
+        break;
+      i++;
+    }
+    if (i == m->ntabs) {
+      memcpy(m->tab_widths, m->tabbar_widths,
+             sizeof(int) * m->tabbar_ntabs);
+      for (c = m->clients; c; c = c->next) drawclienttab(c);
+      return;
+    }
   }
 
   if (tot_width >
@@ -1912,25 +1940,35 @@ void drawtab(Monitor* m) {
   w = mw - buttons_w - x;
   x += w;
   drw_setscheme(drw, scheme[SchemeBtnPrev]);
-  w = TEXTW(btn_prev) - lrpad + horizpadtabo;
-  m->tab_btn_w[0] = w;
+  w = m->tab_btn_w[0];
   drw_text(drw, x + horizpadtabo / 2, vertpadbar / 2, w, th - vertpadbar, 0,
            btn_prev, 0);
   x += w;
   drw_setscheme(drw, scheme[SchemeBtnNext]);
-  w = TEXTW(btn_next) - lrpad + horizpadtabo;
-  m->tab_btn_w[1] = w;
+  w = m->tab_btn_w[1];
   drw_text(drw, x + horizpadtabo / 2, vertpadbar / 2, w, th - vertpadbar, 0,
            btn_next, 0);
   x += w;
   drw_setscheme(drw, scheme[SchemeBtnClose]);
-  w = TEXTW(btn_close) - lrpad + horizpadtabo;
-  m->tab_btn_w[2] = w;
+  w = m->tab_btn_w[2];
   drw_text(drw, x + horizpadtabo / 2, vertpadbar / 2, w, th - vertpadbar, 0,
            btn_close, 0);
   x += w;
 
   drw_map(drw, m->tabwin, 0, 0, m->ww, th);
+
+  m->tabbar_mw = mw;
+  m->tabbar_ww = m->ww;
+  m->tabbar_ntabs = m->ntabs;
+  for (i = 0, c = m->clients; c && i < m->ntabs; c = c->next) {
+    if (!ISVISIBLE(c) || c->isfloating) continue;
+    m->tabbar_widths[i] = m->tab_widths[i];
+    m->tabbar_clients[i] = c->win;
+    m->tabbar_selected[i] = c == m->sel;
+    strlcpy(m->tabbar_names[i], c->name, sizeof m->tabbar_names[i]);
+    i++;
+  }
+  m->tabbar_valid = 1;
 
   for (c = m->clients; c; c = c->next) drawclienttab(c);
 }
@@ -1974,9 +2012,10 @@ void expose(XEvent* e) {
     return;
   }
   if (ev->count == 0 && (m = wintomon(ev->window))) {
-    if (ev->window == m->tabwin)
+    if (ev->window == m->tabwin) {
+      m->tabbar_valid = 0;
       drawtab(m);
-    else {
+    } else {
       drawbar(m);
       if (m == selmon) updatesystray();
     }
@@ -4399,6 +4438,8 @@ void updatetitle(Client* c) {
     gettextprop(c->win, XA_WM_NAME, c->name, sizeof c->name);
   if (c->name[0] == '\0') /* hack to mark broken clients */
     strcpy(c->name, broken);
+  c->tab_label_width = MIN(TEXTW(c->name) - lrpad + horizpadtabi + horizpadtabo,
+                           250);
 }
 
 /**
