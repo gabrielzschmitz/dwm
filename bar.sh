@@ -20,19 +20,38 @@ pink='#c678dd'
 darkblue='#668ee3'
 
 pomodoro_file="${XDG_RUNTIME_DIR:-/tmp}/dwm-pomodoro"
+pomodoro_ref_dir="${XDG_RUNTIME_DIR:-/tmp}/dwm-pomodoro-age-$$"
+pomodoro_ref0="$pomodoro_ref_dir/ref0"
+pomodoro_ref1="$pomodoro_ref_dir/ref1"
+pomodoro_ref2="$pomodoro_ref_dir/ref2"
+pomodoro_ref3="$pomodoro_ref_dir/ref3"
+mkdir -p "$pomodoro_ref_dir"
+: > "$pomodoro_ref0"
+: > "$pomodoro_ref1"
+: > "$pomodoro_ref2"
+: > "$pomodoro_ref3"
 
 (
   while true; do
-    stdbuf -oL tomato -t 2>/dev/null | while IFS= read -r line; do
+    tomato -t 2>/dev/null | while IFS= read -r line; do
       printf '%s\n' "$line" > "$pomodoro_file"
     done
     sleep 1
   done
 ) &
-trap 'kill 0' EXIT
+(
+  while true; do
+    sleep 1
+    cp -p "$pomodoro_ref2" "$pomodoro_ref3" 2>/dev/null || :
+    cp -p "$pomodoro_ref1" "$pomodoro_ref2" 2>/dev/null || :
+    cp -p "$pomodoro_ref0" "$pomodoro_ref1" 2>/dev/null || :
+    : > "$pomodoro_ref0"
+  done
+) &
+trap 'rm -f "$pomodoro_ref0" "$pomodoro_ref1" "$pomodoro_ref2" "$pomodoro_ref3"; rmdir "$pomodoro_ref_dir" 2>/dev/null; kill 0' 0
 
 pomodoro() {
-  pomodoro_output=$(find "$pomodoro_file" -newermt '-3 seconds' 2>/dev/null | grep -q . && tail -n 1 "$pomodoro_file" 2>/dev/null | tr -d '\r' | sed 's/^[[:space:]]*//') || return
+  pomodoro_output=$(find "$pomodoro_file" -newer "$pomodoro_ref3" -print 2>/dev/null | grep -q . && tail -n 1 "$pomodoro_file" 2>/dev/null | tr -d '\015' | sed 's/^[[:space:]]*//') || return
   [ -n "$pomodoro_output" ] || return
   printf '^c%s^^b%s^ %s ^b%s^' "$black" "$red" "$pomodoro_output" "$black"
 }
@@ -190,5 +209,5 @@ $status_lines
 EOF
 
   xsetroot -name " $status" 2>/dev/null || exit 1
-  sleep 0.25
+  sleep 1
 done
