@@ -17,6 +17,7 @@
   gnused,
   procps,
   xsetroot,
+  bash,
 }:
 
 stdenv.mkDerivation {
@@ -57,6 +58,7 @@ stdenv.mkDerivation {
           gnused
           procps
           xsetroot
+          bash
         ]
       }
 
