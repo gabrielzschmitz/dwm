@@ -33,7 +33,7 @@ mkdir -p "$pomodoro_ref_dir"
 
 (
   while true; do
-    tomato -t 2>/dev/null | while IFS= read -r line; do
+    tomato -t 2> /dev/null | while IFS= read -r line; do
       printf '%s\n' "$line" > "$pomodoro_file"
     done
     sleep 1
@@ -42,16 +42,16 @@ mkdir -p "$pomodoro_ref_dir"
 (
   while true; do
     sleep 1
-    cp -p "$pomodoro_ref2" "$pomodoro_ref3" 2>/dev/null || :
-    cp -p "$pomodoro_ref1" "$pomodoro_ref2" 2>/dev/null || :
-    cp -p "$pomodoro_ref0" "$pomodoro_ref1" 2>/dev/null || :
+    cp -p "$pomodoro_ref2" "$pomodoro_ref3" 2> /dev/null || :
+    cp -p "$pomodoro_ref1" "$pomodoro_ref2" 2> /dev/null || :
+    cp -p "$pomodoro_ref0" "$pomodoro_ref1" 2> /dev/null || :
     : > "$pomodoro_ref0"
   done
 ) &
 trap 'rm -f "$pomodoro_ref0" "$pomodoro_ref1" "$pomodoro_ref2" "$pomodoro_ref3"; rmdir "$pomodoro_ref_dir" 2>/dev/null; kill 0' 0
 
 pomodoro() {
-  pomodoro_output=$(find "$pomodoro_file" -newer "$pomodoro_ref3" -print 2>/dev/null | grep -q . && tail -n 1 "$pomodoro_file" 2>/dev/null | tr -d '\015' | sed 's/^[[:space:]]*//') || return
+  pomodoro_output=$(find "$pomodoro_file" -newer "$pomodoro_ref3" -print 2> /dev/null | grep -q . && tail -n 1 "$pomodoro_file" 2> /dev/null | tr -d '\015' | sed 's/^[[:space:]]*//') || return
   [ -n "$pomodoro_output" ] || return
   printf '^c%s^^b%s^ %s ^b%s^' "$black" "$red" "$pomodoro_output" "$black"
 }
@@ -100,8 +100,8 @@ cpu() {
 brightness() {
   for brightness_device in /sys/class/backlight/*; do
     [ -d "$brightness_device" ] || continue
-    brightness_current=$(cat "$brightness_device/brightness" 2>/dev/null) || continue
-    brightness_maximum=$(cat "$brightness_device/max_brightness" 2>/dev/null) || continue
+    brightness_current=$(cat "$brightness_device/brightness" 2> /dev/null) || continue
+    brightness_maximum=$(cat "$brightness_device/max_brightness" 2> /dev/null) || continue
     [ "$brightness_maximum" -gt 0 ] || continue
     brightness_percentage=$((brightness_current * 100 / brightness_maximum))
     printf '^c%s^ %s%%' "$red" "$brightness_percentage"
@@ -124,7 +124,7 @@ mem() {
 }
 
 volume() {
-  volume_output=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null) || return
+  volume_output=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2> /dev/null) || return
 
   case "$volume_output" in
     *'[MUTED]'*)
@@ -152,8 +152,8 @@ volume() {
 battery() {
   for battery_dir in /sys/class/power_supply/BAT*; do
     [ -d "$battery_dir" ] || continue
-    battery_capacity=$(cat "$battery_dir/capacity" 2>/dev/null) || continue
-    battery_status=$(cat "$battery_dir/status" 2>/dev/null || true)
+    battery_capacity=$(cat "$battery_dir/capacity" 2> /dev/null) || continue
+    battery_status=$(cat "$battery_dir/status" 2> /dev/null || true)
 
     printf '^c%s^^b%s^ 󱊣 ' "$black" "$green"
     printf '^c%s^^b%s^ %s%%' "$green" "$black" "$battery_capacity"
@@ -167,7 +167,7 @@ network() {
   # Ethernet takes priority when connected.
   for network_device in /sys/class/net/enp*; do
     [ -d "$network_device" ] || continue
-    network_state=$(cat "$network_device/operstate" 2>/dev/null || true)
+    network_state=$(cat "$network_device/operstate" 2> /dev/null || true)
     if [ "$network_state" = 'up' ]; then
       printf '^c%s^^b%s^ 󰈁 ^d^%s' "$black" "$blue" ' ^c#7aa2f7^Connected'
       return
@@ -177,7 +177,7 @@ network() {
   # Otherwise, show Wi-Fi, whether connected or disconnected.
   for network_device in /sys/class/net/*; do
     [ -d "$network_device/wireless" ] || continue
-    network_state=$(cat "$network_device/operstate" 2>/dev/null || true)
+    network_state=$(cat "$network_device/operstate" 2> /dev/null || true)
     if [ "$network_state" = 'up' ]; then
       printf '^c%s^^b%s^ 󰤨 ^d^%s' "$black" "$blue" ' ^c#7aa2f7^Connected'
     else
@@ -204,10 +204,10 @@ while true; do
     [ -n "$status_output" ] || continue
     [ -n "$status" ] && status="$status "
     status="$status$status_output"
-  done <<EOF
+  done << EOF
 $status_lines
 EOF
 
-  xsetroot -name " $status" 2>/dev/null || exit 1
+  xsetroot -name " $status" 2> /dev/null || exit 1
   sleep 1
 done
