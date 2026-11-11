@@ -1804,8 +1804,7 @@ void drawclienttab(Client* c) {
   unsigned int textw;
   int closew, w, selected;
 
-  if (!showtabs(c->mon) || !c->isfloating || c->isfullscreen || !ISVISIBLE(c) ||
-      HIDDEN(c)) {
+  if (!c->isfloating || c->isfullscreen || !ISVISIBLE(c) || HIDDEN(c)) {
     if (c->tabwin) XUnmapWindow(dpy, c->tabwin);
     c->tabdrawn = 0;
     return;
@@ -4040,13 +4039,18 @@ static int showtablayout(void (*arrange)(Monitor*)) {
  */
 static int showtabs(Monitor* m) {
   Client* c;
-  int nvis = 0;
+  int nvis = 0, nfloat = 0;
 
   for (c = m->clients; c; c = c->next) {
-    if (ISVISIBLE(c)) ++nvis;
+    if (ISVISIBLE(c)) {
+      ++nvis;
+      if (c->isfloating) ++nfloat;
+    }
   }
 
-  return m->showtab == showtab_always ||
+  if (nvis > 0 && nvis == nfloat) return 0;
+
+  return nfloat > 0 || m->showtab == showtab_always ||
          ((m->showtab == showtab_auto) && (nvis > 1) &&
           (m->lt[m->sellt]->arrange == monocle)) ||
          ((m->showtab == showtab_nmodes) &&
