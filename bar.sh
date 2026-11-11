@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # dwm status bar for NixOS
 # ^c$var^ = foreground color
@@ -19,13 +19,6 @@ yellow='#EBCB8B'
 pink='#c678dd'
 darkblue='#668ee3'
 
-module_output=''
-emit() {
-  local fragment
-  printf -v fragment "$@"
-  module_output+="$fragment"
-}
-
 pomodoro_file="${XDG_RUNTIME_DIR:-/tmp}/dwm-pomodoro"
 
 (
@@ -39,99 +32,66 @@ pomodoro_file="${XDG_RUNTIME_DIR:-/tmp}/dwm-pomodoro"
 trap 'kill 0' EXIT
 
 pomodoro() {
-  local output
-  module_output=''
-
-  find "$pomodoro_file" -newermt '-3 seconds' 2>/dev/null | grep -q . || return
-
-  output=$(tail -n 1 "$pomodoro_file" 2>/dev/null) || return
-  output=${output//$'\r'/}
-  output=${output#"${output%%[![:space:]]*}"}
-  [[ -n "$output" ]] || return
-
-  emit '^c%s^^b%s^ %s ^b%s^' "$black" "$red" "$output" "$black"
+  pomodoro_output=$(find "$pomodoro_file" -newermt '-3 seconds' 2>/dev/null | grep -q . && tail -n 1 "$pomodoro_file" 2>/dev/null | tr -d '\r' | sed 's/^[[:space:]]*//') || return
+  [ -n "$pomodoro_output" ] || return
+  printf '^c%s^^b%s^ %s ^b%s^' "$black" "$red" "$pomodoro_output" "$black"
 }
 
 cpu_file="${XDG_RUNTIME_DIR:-/tmp}/dwm-cpu"
-
 cpu() {
-  local user nice system idle iowait irq softirq steal rest
-  local total busy prev_total prev_busy percentage history count middle value j
-  local -a samples
-  module_output=''
+  read -r cpu_label cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq cpu_softirq cpu_steal cpu_rest < /proc/stat
+  cpu_total=$((cpu_user + cpu_nice + cpu_system + cpu_idle + cpu_iowait + cpu_irq + cpu_softirq + cpu_steal))
+  cpu_busy=$((cpu_total - cpu_idle - cpu_iowait))
+  cpu_prev_total=0
+  cpu_prev_busy=0
+  cpu_history=
 
-  read -r _ user nice system idle iowait irq softirq steal rest < /proc/stat
-
-  total=$((user + nice + system + idle + iowait + irq + softirq + steal))
-  busy=$((total - idle - iowait))
-
-  if [[ -r "$cpu_file" ]]; then
-    read -r prev_total prev_busy history < "$cpu_file"
+  if [ -r "$cpu_file" ]; then
+    read -r cpu_prev_total cpu_prev_busy cpu_history < "$cpu_file" || :
   fi
 
-  percentage=-1
-  if (( ${prev_total:-0} > 0 && total > prev_total )); then
-    percentage=$(( (busy - prev_busy) * 100 / (total - prev_total) ))
+  cpu_percentage=-1
+  if [ "$cpu_prev_total" -gt 0 ] && [ "$cpu_total" -gt "$cpu_prev_total" ]; then
+    cpu_percentage=$(((cpu_busy - cpu_prev_busy) * 100 / (cpu_total - cpu_prev_total)))
   fi
 
-  read -r -a samples <<< "${history:-}"
-  if (( percentage >= 0 )); then
-    samples+=("$percentage")
+  set -- $cpu_history
+  if [ "$cpu_percentage" -ge 0 ]; then
+    set -- "$@" "$cpu_percentage"
   fi
-  while (( ${#samples[@]} > 5 )); do
-    samples=("${samples[@]:1}")
+  while [ "$#" -gt 5 ]; do
+    shift
   done
+  cpu_history=$*
+  printf '%s %s %s\n' "$cpu_total" "$cpu_busy" "$cpu_history" > "$cpu_file"
 
-  printf '%s %s %s\n' "$total" "$busy" "${samples[*]}" > "$cpu_file"
-
-  count=${#samples[@]}
-  if (( count > 0 )); then
-    for ((i = 1; i < count; i++)); do
-      value=${samples[i]}
-      j=$i
-      while (( j > 0 && samples[j - 1] > value )); do
-        samples[j]=${samples[j - 1]}
-        ((j--))
-      done
-      samples[j]=$value
-    done
-
-    middle=$((count / 2))
-    if (( count % 2 )); then
-      percentage=${samples[middle]}
-    else
-      percentage=$(( (samples[middle - 1] + samples[middle]) / 2 ))
-    fi
+  cpu_count=$#
+  if [ "$cpu_count" -gt 0 ]; then
+    cpu_percentage=$(printf '%s\n' "$@" | sort -n | awk -v n="$cpu_count" '
+      { a[NR] = $1 }
+      END { print (n % 2) ? a[(n + 1) / 2] : int((a[n / 2] + a[n / 2 + 1]) / 2) }')
   else
-    percentage=0
+    cpu_percentage=0
   fi
 
-  emit '^c%s^^b%s^  ' "$black" "$cyan"
-  emit '^c%s^^b%s^ %s%% ^b%s^' "$white" "$grey" "$percentage" "$black"
+  printf '^c%s^^b%s^  ' "$black" "$cyan"
+  printf '^c%s^^b%s^ %s%% ^b%s^' "$white" "$grey" "$cpu_percentage" "$black"
 }
 
 brightness() {
-  local device current maximum percentage
-  module_output=''
-
-  for device in /sys/class/backlight/*; do
-    [[ -d "$device" ]] || continue
-
-    current=$(cat "$device/brightness" 2>/dev/null) || continue
-    maximum=$(cat "$device/max_brightness" 2>/dev/null) || continue
-    (( maximum > 0 )) || continue
-
-    percentage=$((current * 100 / maximum))
-    emit '^c%s^ %s%%' "$red" "$percentage"
+  for brightness_device in /sys/class/backlight/*; do
+    [ -d "$brightness_device" ] || continue
+    brightness_current=$(cat "$brightness_device/brightness" 2>/dev/null) || continue
+    brightness_maximum=$(cat "$brightness_device/max_brightness" 2>/dev/null) || continue
+    [ "$brightness_maximum" -gt 0 ] || continue
+    brightness_percentage=$((brightness_current * 100 / brightness_maximum))
+    printf '^c%s^ %s%%' "$red" "$brightness_percentage"
     return
   done
 }
 
 mem() {
-  local used
-  module_output=''
-
-  used=$(awk '
+  mem_used=$(awk '
   /^MemTotal:/ { total = $2 }
   /^MemAvailable:/ { available = $2 }
   END {
@@ -140,108 +100,94 @@ mem() {
   }
   ' /proc/meminfo)
 
-  emit '^c%s^^b%s^ 󰘚 ' "$black" "$pink"
-  emit '^c%s^^b%s^ %s ^b%s^' "$white" "$grey" "${used:-N/A}" "$black"
+  printf '^c%s^^b%s^ 󰘚 ' "$black" "$pink"
+  printf '^c%s^^b%s^ %s ^b%s^' "$white" "$grey" "${mem_used:-N/A}" "$black"
 }
 
 volume() {
-  local output volume icon
-  module_output=''
+  volume_output=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null) || return
 
-  output=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null) || return
+  case "$volume_output" in
+    *'[MUTED]'*)
+      volume_icon=''
+      volume_percentage=0
+      ;;
+    *)
+      volume_value=$(printf '%s\n' "$volume_output" | sed -n 's/.*Volume: \([0-9.][0-9.]*\).*/\1/p')
+      [ -n "$volume_value" ] || return
+      volume_percentage=$(awk -v v="$volume_value" 'BEGIN { printf "%.0f", v * 100 }')
+      if [ "$volume_percentage" -le 33 ]; then
+        volume_icon='󰕿'
+      elif [ "$volume_percentage" -le 66 ]; then
+        volume_icon='󰖀'
+      else
+        volume_icon='󰕾'
+      fi
+      ;;
+  esac
 
-  if [[ "$output" == *"[MUTED]"* ]]; then
-    icon=""
-    volume=0
-  else
-    [[ "$output" =~ Volume:\ ([0-9.]+) ]] || return
-    volume=$(awk -v v="${BASH_REMATCH[1]}" 'BEGIN { printf "%.0f", v * 100 }')
-
-    if (( volume <= 33 )); then
-      icon="󰕿"
-    elif (( volume <= 66 )); then
-      icon="󰖀"
-    else
-      icon="󰕾"
-    fi
-  fi
-
-  emit '^c%s^^b%s^ %s ' "$black" "$orange" "$icon"
-  emit '^c%s^^b%s^ %s%%^b%s^' "$orange" "$black" "$volume" "$black"
+  printf '^c%s^^b%s^ %s ' "$black" "$orange" "$volume_icon"
+  printf '^c%s^^b%s^ %s%%^b%s^' "$orange" "$black" "$volume_percentage" "$black"
 }
 
 battery() {
-  local battery_dir capacity status
-  module_output=''
-
   for battery_dir in /sys/class/power_supply/BAT*; do
-    [[ -d "$battery_dir" ]] || continue
+    [ -d "$battery_dir" ] || continue
+    battery_capacity=$(cat "$battery_dir/capacity" 2>/dev/null) || continue
+    battery_status=$(cat "$battery_dir/status" 2>/dev/null || true)
 
-    capacity=$(cat "$battery_dir/capacity" 2>/dev/null) || continue
-    status=$(cat "$battery_dir/status" 2>/dev/null || true)
-
-    emit '^c%s^^b%s^ 󱊣 ' "$black" "$green"
-    emit '^c%s^^b%s^ %s%%' "$green" "$black" "$capacity"
-
-    [[ "$status" == "Charging" ]] && emit '^c%s^+' "$green"
-    emit '^b%s^' "$black"
+    printf '^c%s^^b%s^ 󱊣 ' "$black" "$green"
+    printf '^c%s^^b%s^ %s%%' "$green" "$black" "$battery_capacity"
+    [ "$battery_status" = 'Charging' ] && printf '^c%s^+' "$green"
+    printf '^b%s^' "$black"
     return
   done
 }
 
 network() {
-  local device state
-  module_output=''
-
   # Ethernet takes priority when connected.
-  for device in /sys/class/net/enp*; do
-    [[ -d "$device" ]] || continue
-
-    state=$(cat "$device/operstate" 2>/dev/null || true)
-
-    if [[ "$state" == "up" ]]; then
-      emit '^c%s^^b%s^ 󰈁 ^d^%s' \
-        "$black" "$blue" ' ^c#7aa2f7^Connected'
+  for network_device in /sys/class/net/enp*; do
+    [ -d "$network_device" ] || continue
+    network_state=$(cat "$network_device/operstate" 2>/dev/null || true)
+    if [ "$network_state" = 'up' ]; then
+      printf '^c%s^^b%s^ 󰈁 ^d^%s' "$black" "$blue" ' ^c#7aa2f7^Connected'
       return
     fi
   done
 
   # Otherwise, show Wi-Fi, whether connected or disconnected.
-  for device in /sys/class/net/*; do
-    [[ -d "$device/wireless" ]] || continue
-
-    state=$(cat "$device/operstate" 2>/dev/null || true)
-
-    if [[ "$state" == "up" ]]; then
-      emit '^c%s^^b%s^ 󰤨 ^d^%s' \
-        "$black" "$blue" ' ^c#7aa2f7^Connected'
+  for network_device in /sys/class/net/*; do
+    [ -d "$network_device/wireless" ] || continue
+    network_state=$(cat "$network_device/operstate" 2>/dev/null || true)
+    if [ "$network_state" = 'up' ]; then
+      printf '^c%s^^b%s^ 󰤨 ^d^%s' "$black" "$blue" ' ^c#7aa2f7^Connected'
     else
-      emit '^c%s^^b%s^ 󰤭 ^d^%s' \
-        "$black" "$blue" ' ^c#7aa2f7^Disconnected'
+      printf '^c%s^^b%s^ 󰤭 ^d^%s' "$black" "$blue" ' ^c#7aa2f7^Disconnected'
     fi
-
     return
   done
 }
 
 clock() {
-  module_output=''
-  emit '^c%s^^b%s^ 󱑆 ' "$black" "$darkblue"
-  emit '^c%s^^b%s^ %s ' "$black" "$blue" "$(date '+%H:%M')"
+  printf '^c%s^^b%s^ 󱑆 ' "$black" "$darkblue"
+  printf '^c%s^^b%s^ %s ' "$black" "$blue" "$(date '+%H:%M')"
 }
 
 while true; do
-  status=""
-
-  for module in pomodoro volume battery cpu mem clock; do
-    "$module"
-    output=$module_output
-
-    if [[ -n "$output" ]]; then
-      [[ -n "$status" ]] && status+=" "
-      status+="$output"
-    fi
-  done
+  status_lines=$(
+    for module in pomodoro volume battery cpu mem clock; do
+      "$module"
+      printf '\n'
+    done
+  )
+  status=
+  while IFS= read -r status_output; do
+    [ -n "$status_output" ] || continue
+    [ -n "$status" ] && status="$status "
+    status="$status$status_output"
+  done <<EOF
+$status_lines
+EOF
 
   xsetroot -name " $status" 2>/dev/null || exit 1
   sleep 0.25

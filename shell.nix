@@ -10,7 +10,6 @@ pkgs.mkShell {
     makeWrapper
     gnumake
     gcc
-    bash
     bear
     clang-tools
     xorgserver # provides Xephyr
