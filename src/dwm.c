@@ -216,6 +216,8 @@ struct Client {
   Monitor* mon;          /**< Monitor owning the client. */
   Window win;            /**< X window handle. */
   Window tabwin;         /**< Title tab above floating windows. */
+  int tabdrawn, tabx, taby, tabw, tabselected;
+  char tabname[256]; /**< Last title drawn in the floating tab. */
 };
 
 /** @brief A keyboard binding. */
@@ -1795,15 +1797,17 @@ void drawclienttab(Client* c) {
     .event_mask = ButtonPressMask | ExposureMask};
   Clr closeclr[3];
   unsigned int textw;
-  int closew, w;
+  int closew, w, selected;
 
   if (!showtabs(c->mon) || !c->isfloating || c->isfullscreen ||
       !ISVISIBLE(c) || HIDDEN(c)) {
     if (c->tabwin) XUnmapWindow(dpy, c->tabwin);
+    c->tabdrawn = 0;
     return;
   }
 
   w = MAX(WIDTH(c), 1);
+  selected = c == c->mon->sel;
   closew = TEXTW(TAB_CLOSE_BTN) - lrpad + horizpadtabo;
   if (!c->tabwin) {
     c->tabwin = XCreateWindow(
@@ -1814,19 +1818,28 @@ void drawclienttab(Client* c) {
   }
 
   XMoveResizeWindow(dpy, c->tabwin, c->x, c->y - th, w, th);
-  drw_setscheme(drw, scheme[c == c->mon->sel ? TabSel : TabNorm]);
-  drw_rect(drw, 0, 0, w, th, 1, 1);
-  textw = (w > closew + horizpadtabo) ? w - closew - horizpadtabo : 0;
-  drw_text(drw, horizpadtabo / 2, vertpadbar / 2, textw, th - vertpadbar,
-           horizpadtabi / 2, c->name, 0);
-  memcpy(closeclr, scheme[c == c->mon->sel ? TabSel : TabNorm],
-         sizeof closeclr);
-  closeclr[ColFg] = scheme[SchemeBtnClose][ColFg];
-  drw_setscheme(drw, closeclr);
-  drw_text(drw, MAX(w - closew, 0) + horizpadtabo / 2, vertpadbar / 2, closew,
-           th - vertpadbar, 0, TAB_CLOSE_BTN, 0);
-  drw_setscheme(drw, scheme[c == c->mon->sel ? TabSel : TabNorm]);
-  drw_map(drw, c->tabwin, 0, 0, w, th);
+  if (!c->tabdrawn || c->tabx != c->x || c->taby != c->y - th ||
+      c->tabw != w || c->tabselected != selected ||
+      strcmp(c->tabname, c->name)) {
+    drw_setscheme(drw, scheme[selected ? TabSel : TabNorm]);
+    drw_rect(drw, 0, 0, w, th, 1, 1);
+    textw = (w > closew + horizpadtabo) ? w - closew - horizpadtabo : 0;
+    drw_text(drw, horizpadtabo / 2, vertpadbar / 2, textw, th - vertpadbar,
+             horizpadtabi / 2, c->name, 0);
+    memcpy(closeclr, scheme[selected ? TabSel : TabNorm], sizeof closeclr);
+    closeclr[ColFg] = scheme[SchemeBtnClose][ColFg];
+    drw_setscheme(drw, closeclr);
+    drw_text(drw, MAX(w - closew, 0) + horizpadtabo / 2, vertpadbar / 2,
+             closew, th - vertpadbar, 0, TAB_CLOSE_BTN, 0);
+    drw_setscheme(drw, scheme[selected ? TabSel : TabNorm]);
+    drw_map(drw, c->tabwin, 0, 0, w, th);
+    c->tabx = c->x;
+    c->taby = c->y - th;
+    c->tabw = w;
+    c->tabselected = selected;
+    strlcpy(c->tabname, c->name, sizeof c->tabname);
+    c->tabdrawn = 1;
+  }
 
   wc.sibling = c->win;
   wc.stack_mode = Above;
@@ -1959,6 +1972,7 @@ void expose(XEvent* e) {
   XExposeEvent* ev = &e->xexpose;
 
   if (ev->count == 0 && (c = wintotab(ev->window))) {
+    c->tabdrawn = 0;
     drawclienttab(c);
     return;
   }
