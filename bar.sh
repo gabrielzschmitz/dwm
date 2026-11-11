@@ -86,9 +86,20 @@ cpu() {
 
   cpu_count=$#
   if [ "$cpu_count" -gt 0 ]; then
-    cpu_percentage=$(printf '%s\n' "$@" | sort -n | awk -v n="$cpu_count" '
+    cpu_percentage=$(printf '%s\n' "$@" | awk -v n="$cpu_count" '
       { a[NR] = $1 }
-      END { print (n % 2) ? a[(n + 1) / 2] : int((a[n / 2] + a[n / 2 + 1]) / 2) }')
+      END {
+        for (i = 2; i <= NR; i++) {
+          value = a[i]
+          j = i - 1
+          while (j > 0 && a[j] > value) {
+            a[j + 1] = a[j]
+            j--
+          }
+          a[j + 1] = value
+        }
+        print (n % 2) ? a[(n + 1) / 2] : int((a[n / 2] + a[n / 2 + 1]) / 2)
+      }')
   else
     cpu_percentage=0
   fi
