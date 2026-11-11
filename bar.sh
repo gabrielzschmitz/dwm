@@ -48,7 +48,7 @@ cpu_file="${XDG_RUNTIME_DIR:-/tmp}/dwm-cpu"
 
 cpu() {
   local user nice system idle iowait irq softirq steal rest
-  local total busy prev_total prev_busy percentage history sorted count median
+  local total busy prev_total prev_busy percentage history count middle value j
   local -a samples
 
   read -r _ user nice system idle iowait irq softirq steal rest < /proc/stat
@@ -77,10 +77,22 @@ cpu() {
 
   count=${#samples[@]}
   if (( count > 0 )); then
-    median=$(printf '%s\n' "${samples[@]}" | sort -n | awk -v n="$count" '
-      { a[NR] = $1 }
-      END { print (n % 2) ? a[(n + 1) / 2] : int((a[n / 2] + a[n / 2 + 1]) / 2) }')
-    percentage=$median
+    for ((i = 1; i < count; i++)); do
+      value=${samples[i]}
+      j=$i
+      while (( j > 0 && samples[j - 1] > value )); do
+        samples[j]=${samples[j - 1]}
+        ((j--))
+      done
+      samples[j]=$value
+    done
+
+    middle=$((count / 2))
+    if (( count % 2 )); then
+      percentage=${samples[middle]}
+    else
+      percentage=$(( (samples[middle - 1] + samples[middle]) / 2 ))
+    fi
   else
     percentage=0
   fi

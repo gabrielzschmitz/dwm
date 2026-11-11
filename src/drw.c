@@ -613,7 +613,7 @@ void drw_pic(Drw* drw, int x, int y, unsigned int w, unsigned int h,
 }
 
 /**
- * @brief Copy the drawing context to a window and flush the connection.
+ * @brief Copy the drawing context to a window and flush queued requests.
  *
  * @param drw        Drawing context.
  * @param win        Destination window.
@@ -627,7 +627,7 @@ void drw_map(Drw* drw, Window win, int x, int y, unsigned int w,
   if (!drw) return;
 
   XCopyArea(drw->dpy, drw->drawable, win, drw->gc, x, y, w, h, x, y);
-  XSync(drw->dpy, False);
+  XFlush(drw->dpy);
 }
 
 /**
