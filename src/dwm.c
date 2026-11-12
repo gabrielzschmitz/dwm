@@ -217,7 +217,7 @@ struct Client {
   Window win;            /**< X window handle. */
   Window tabwin;         /**< Title tab above floating windows. */
   int tabdrawn, tabx, taby, tabw, tabselected;
-  char tabname[256]; /**< Last title drawn in the floating tab. */
+  char tabname[256];   /**< Last title drawn in the floating tab. */
   int tab_label_width; /**< Cached title width for the tab bar. */
 };
 
@@ -351,6 +351,7 @@ static void seturgent(Client* c, int urg);
 static void show(Client* c);
 static void showhide(Client* c);
 static int showtabs(Monitor* m);
+static int showfloattabs(Monitor* m);
 static void showtagpreview(int tag);
 static void spawn(const Arg* arg);
 static void switchtag(void);
@@ -479,8 +480,8 @@ struct Monitor {
   Window tabbar_clients[MAXTABS];
   int tabbar_selected[MAXTABS];
   char tabbar_names[MAXTABS][256];
-  const Layout* lt[2];         /**< Layouts for the two layout slots. */
-  Pertag* pertag;              /**< Per-tag state. */
+  const Layout* lt[2]; /**< Layouts for the two layout slots. */
+  Pertag* pertag;      /**< Per-tag state. */
 };
 
 #include "movestack.c"
@@ -1804,7 +1805,8 @@ void drawclienttab(Client* c) {
   unsigned int textw;
   int closew, w, selected;
 
-  if (!c->isfloating || c->isfullscreen || !ISVISIBLE(c) || HIDDEN(c)) {
+  if (!c->isfloating || c->isfullscreen || !ISVISIBLE(c) || HIDDEN(c) ||
+      (!showfloattabs(c->mon) && !showtabs(c->mon))) {
     if (c->tabwin) XUnmapWindow(dpy, c->tabwin);
     c->tabdrawn = 0;
     return;
@@ -1898,8 +1900,7 @@ void drawtab(Monitor* m) {
       i++;
     }
     if (i == m->ntabs) {
-      memcpy(m->tab_widths, m->tabbar_widths,
-             sizeof(int) * m->tabbar_ntabs);
+      memcpy(m->tab_widths, m->tabbar_widths, sizeof(int) * m->tabbar_ntabs);
       for (c = m->clients; c; c = c->next) drawclienttab(c);
       return;
     }
@@ -4032,6 +4033,18 @@ static int showtablayout(void (*arrange)(Monitor*)) {
 }
 
 /**
+ * @brief Check whether the current layout shows tabs for floating windows.
+ *
+ * @param m          Monitor to test.
+ * @return 1 for the floating layout or a showtab_layouts[] layout, 0 otherwise.
+ */
+static int showfloattabs(Monitor* m) {
+  void (*arrange)(Monitor*) = m->lt[m->sellt]->arrange;
+
+  return arrange == NULL || showtablayout(arrange);
+}
+
+/**
  * @brief Decide whether a monitor should show the main tab bar.
  *
  * @param m          Monitor to test.
@@ -4050,7 +4063,7 @@ static int showtabs(Monitor* m) {
 
   if (nvis > 0 && nvis == nfloat) return 0;
 
-  return nfloat > 0 || m->showtab == showtab_always ||
+  return (nfloat > 0 && showfloattabs(m)) || m->showtab == showtab_always ||
          ((m->showtab == showtab_auto) && (nvis > 1) &&
           (m->lt[m->sellt]->arrange == monocle)) ||
          ((m->showtab == showtab_nmodes) &&
@@ -4442,8 +4455,8 @@ void updatetitle(Client* c) {
     gettextprop(c->win, XA_WM_NAME, c->name, sizeof c->name);
   if (c->name[0] == '\0') /* hack to mark broken clients */
     strcpy(c->name, broken);
-  c->tab_label_width = MIN(TEXTW(c->name) - lrpad + horizpadtabi + horizpadtabo,
-                           250);
+  c->tab_label_width =
+    MIN(TEXTW(c->name) - lrpad + horizpadtabi + horizpadtabo, 250);
 }
 
 /**
