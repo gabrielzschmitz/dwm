@@ -155,6 +155,20 @@ make
 Changes to `bar.sh` do not require rebuilding dwm. Restart the script for the
 changes to take effect.
 
+### Keybindings manual
+
+The `dwm-keys(1)` manual page is generated from the `keys[]` and `buttons[]`
+arrays in `src/config.h`, together with the `@brief` comments in the source
+files. Regenerate it without rebuilding dwm:
+
+```sh
+cd src/
+make keys
+```
+
+`sudo make install` installs the generated page as `dwm-keys.1`. Press
+`SUPER+?` to open it in a terminal.
+
 ---
 
 ## License

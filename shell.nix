@@ -38,5 +38,6 @@ pkgs.mkShell {
     echo "  make xephyr     start Xephyr on :1 (1280x720)"
     echo "  make run        run ./dwm inside Xephyr"
     echo "  make dev        build, start Xephyr if needed, run dwm inside it"
+    echo "  make keys       regenerate dwm-keys(1) from config.h"
   '';
 }

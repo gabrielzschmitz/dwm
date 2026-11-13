@@ -96,6 +96,10 @@ typedef struct {
 const char* sptermcmd[] = {"env", "SPTERM=1",        "st", "-c",     "spterm",
                            "-T",  "Scratchpad Term", "-g", "100x25", NULL};
 
+const char* spmancmd[] = {
+  "st", "-c",  "spman",    "-T", "DWM Keybinds ManPage", "-g", "100x45",
+  "-e", "man", "dwm-keys", NULL};
+
 const char* spideacmd[] = {"st", "-c",    "spidea", "-T",   "Idea Sandbox",
                            "-g", "55x25", "-e",     "idea", NULL};
 
@@ -107,10 +111,8 @@ const char* sptomatoccmd[] = {"st", "-c",     "sptomatoc", "-T",     "Tomato.C",
 
 static Sp scratchpads[] = {
   /* class, cmd  */
-  {"spterm", sptermcmd},
-  {"spidea", spideacmd},
-  {"spfm", spfmcmd},
-  {"sptomatoc", sptomatoccmd},
+  {"spterm", sptermcmd}, {"spman", spmancmd},         {"spidea", spideacmd},
+  {"spfm", spfmcmd},     {"sptomatoc", sptomatoccmd},
 };
 
 /* tagging */
@@ -146,9 +148,10 @@ static const Rule rules[] = {
     */
   /* class, instance ,title ,tags mask ,iscentered ,isfloating ,monitor */
   {"spterm", NULL, NULL, SPTAG(0), 1, 1, -1},
-  {"spidea", NULL, NULL, SPTAG(1), 1, 1, -1},
-  {"spfm", NULL, NULL, SPTAG(2), 1, 1, -1},
-  {"sptomatoc", NULL, NULL, SPTAG(3), 1, 1, -1},
+  {"spman", NULL, NULL, SPTAG(1), 1, 1, -1},
+  {"spidea", NULL, NULL, SPTAG(2), 1, 1, -1},
+  {"spfm", NULL, NULL, SPTAG(3), 1, 1, -1},
+  {"sptomatoc", NULL, NULL, SPTAG(4), 1, 1, -1},
 };
 
 /* layout(s) */
@@ -235,6 +238,7 @@ static const Key keys[] = {
   {MODKEY | ShiftMask, XK_p, spawn,
    SHCMD("maim --select | xclip -selection clipboard -t image/png")},
 
+  // launchers
   {MODKEY, XK_d, spawn, SHCMD("dmenu_run -p '󰀻 '")},
   {MODKEY, XK_Return, spawn, SHCMD("st")},
 
@@ -246,6 +250,7 @@ static const Key keys[] = {
   {MODKEY | ShiftMask, XK_space, togglefloating, {0}},
   {MODKEY, XK_f, togglefullscr, {0}},
 
+  // focus and layout controls
   {MODKEY | ControlMask, XK_w, tabmode, {-1}},
   {MODKEY, XK_j, focusstack, {.i = +1}},
   {MODKEY, XK_k, focusstack, {.i = -1}},
@@ -263,6 +268,7 @@ static const Key keys[] = {
   {MODKEY | ShiftMask, XK_l, setcfact, {.f = -0.25}},
   {MODKEY | ShiftMask, XK_o, setcfact, {.f = 0.00}},
 
+  // move windows
   {MODKEY | ShiftMask, XK_j, movestack, {.i = +1}},
   {MODKEY | ShiftMask, XK_k, movestack, {.i = -1}},
   {MODKEY | ShiftMask, XK_Return, zoom, {0}},
@@ -314,9 +320,10 @@ static const Key keys[] = {
 
   // scratchpads
   {Mod1Mask, XK_Return, togglescratch, {.ui = 0}},
-  {Mod1Mask, XK_i, togglescratch, {.ui = 1}},
-  {Mod1Mask, XK_f, togglescratch, {.ui = 2}},
-  {Mod1Mask, XK_t, togglescratch, {.ui = 3}},
+  {Mod1Mask | ShiftMask, XK_slash, togglescratch, {.ui = 1}},
+  {Mod1Mask, XK_i, togglescratch, {.ui = 2}},
+  {Mod1Mask, XK_f, togglescratch, {.ui = 3}},
+  {Mod1Mask, XK_t, togglescratch, {.ui = 4}},
 
   // kill dwm
   {MODKEY | ShiftMask, XK_c, spawn, SHCMD("pkill dwm")},
@@ -331,6 +338,7 @@ static const Key keys[] = {
   {MODKEY, XK_s, hidewin, {0}},
   {MODKEY | ShiftMask, XK_s, restorewin, {0}},
 
+  // tags
   TAGKEYS(XK_1, 0) TAGKEYS(XK_2, 1) TAGKEYS(XK_3, 2) TAGKEYS(XK_4, 3)
     TAGKEYS(XK_5, 4) TAGKEYS(XK_6, 5) TAGKEYS(XK_7, 6) TAGKEYS(XK_8, 7)
       TAGKEYS(XK_9, 8)};

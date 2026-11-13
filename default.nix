@@ -41,6 +41,10 @@ stdenv.mkDerivation {
     libXft
   ];
 
+  postBuild = ''
+    make dwm-keys.1
+  '';
+
   installPhase = ''
     runHook preInstall
 
@@ -63,6 +67,7 @@ stdenv.mkDerivation {
     mkdir -p $out/share/man/man1
     sed "s/VERSION/$version/g" < dwm.1 > $out/share/man/man1/dwm.1
     chmod 644 $out/share/man/man1/dwm.1
+    install -Dm644 dwm-keys.1 $out/share/man/man1/dwm-keys.1
 
     mkdir -p $out/share/applications
     install -Dm644 dwm.desktop $out/share/applications/dwm.desktop
