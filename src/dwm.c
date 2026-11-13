@@ -638,9 +638,10 @@ void arrangemon(Monitor* m) {
   updatesystray();
   XMoveResizeWindow(dpy, m->tabwin, m->wx + m->gappov, m->ty,
                     m->ww - 2 * m->gappov, th);
-  XMoveWindow(
+  XMoveResizeWindow(
     dpy, m->tagwin, m->wx + m->gappov,
-    m->topbar ? m->wy + m->gappoh : m->by - (m->mh / scalepreview) - m->gappoh);
+    m->topbar ? m->wy + m->gappoh : m->by - (m->mh / scalepreview) - m->gappoh,
+    m->mw / scalepreview, m->mh / scalepreview);
   snprintf(m->ltsymbol, sizeof m->ltsymbol, "%s", m->lt[m->sellt]->symbol);
   if (m->lt[m->sellt]->arrange) m->lt[m->sellt]->arrange(m);
 }
@@ -2574,13 +2575,34 @@ void motionnotify(XEvent* e) {
         selmon->previewshow = 0;
         showtagpreview(0);
       }
-    } else if (selmon->previewshow != 0) {
+    }
+  } else if (selmon->previewshow != 0) {
+    XWindowAttributes barattr, tagattr;
+    int gotbar = XGetWindowAttributes(dpy, selmon->barwin, &barattr);
+    int gottag = selmon->tagwin &&
+                 XGetWindowAttributes(dpy, selmon->tagwin, &tagattr);
+    int inbar = gotbar && ev->x_root >= barattr.x - previewpad &&
+                ev->x_root < barattr.x + barattr.width + previewpad &&
+                ev->y_root >= barattr.y - previewpad &&
+                ev->y_root < barattr.y + barattr.height + previewpad;
+    int intag = gottag && ev->x_root >= tagattr.x - previewpad &&
+                ev->x_root < tagattr.x + tagattr.width + previewpad &&
+                ev->y_root >= tagattr.y - previewpad &&
+                ev->y_root < tagattr.y + tagattr.height + previewpad;
+    /* Bridge the gap between the bar and the preview. */
+    int ingap = 0;
+    if (gotbar && gottag && ev->x_root >= tagattr.x - previewpad &&
+        ev->x_root < tagattr.x + tagattr.width + previewpad) {
+      int top = MIN(barattr.y, tagattr.y) - previewpad;
+      int bottom =
+        MAX(barattr.y + barattr.height, tagattr.y + tagattr.height) + previewpad;
+      ingap = ev->y_root >= top && ev->y_root < bottom;
+    }
+
+    if (!inbar && !intag && !ingap) {
       selmon->previewshow = 0;
       showtagpreview(0);
     }
-  } else if (selmon->previewshow != 0) {
-    selmon->previewshow = 0;
-    showtagpreview(0);
   }
 
   if (ev->window != root) return;
@@ -4007,9 +4029,10 @@ void updatepreview(void) {
   for (m = mons; m; m = m->next) {
     if (m->tagwin) continue;
     m->tagwin = XCreateWindow(
-      dpy, root, m->wx, m->by + bh, m->mw / 4, m->mh / 4, 0,
-      DefaultDepth(dpy, screen), CopyFromParent, DefaultVisual(dpy, screen),
-      CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
+      dpy, root, m->wx, m->by + bh, m->mw / scalepreview,
+      m->mh / scalepreview, 0, DefaultDepth(dpy, screen), CopyFromParent,
+      DefaultVisual(dpy, screen), CWOverrideRedirect | CWBackPixmap | CWEventMask,
+      &wa);
     XDefineCursor(dpy, m->tagwin, cursor[CurNormal]->cursor);
     XMapRaised(dpy, m->tagwin);
     XUnmapWindow(dpy, m->tagwin);

@@ -38,8 +38,9 @@ static const int vertpadbar = 11;
 static const int vertpadtab = 35;
 static const int horizpadtabi = 15;
 static const int horizpadtabo = 15;
-static const int scalepreview = 4;
-static const int tag_preview = 1; /* 1 means enable, 0 is off */
+static const int scalepreview = 4; /* 0 = largest; higher = smaller */
+static const int tag_preview = 1;  /* 1 means enable, 0 is off */
+static const int previewpad = 3;   /* Padding around the bar and preview */
 static const int colorfultag =
   1; /* 0 means use SchemeSel for selected non vacant tag */
 static const int new_window_attach_on_end =
