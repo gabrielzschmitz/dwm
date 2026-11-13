@@ -159,7 +159,9 @@ changes to take effect.
 
 The `dwm-keys(1)` manual page is generated from the `keys[]` and `buttons[]`
 arrays in `src/config.h`, together with the `@brief` comments in the source
-files. Regenerate it without rebuilding dwm:
+files. The `src/dwm-keys.c` generator uses the C preprocessor, so macros such
+as `TAGKEYS` and `SHCMD` are expanded before parsing. Regenerate it without
+rebuilding dwm:
 
 ```sh
 cd src/
@@ -167,7 +169,7 @@ make keys
 ```
 
 `sudo make install` installs the generated page as `dwm-keys.1`. Press
-`SUPER+?` to open it in a terminal.
+`ALT+?` to open it in a terminal.
 
 ---
 

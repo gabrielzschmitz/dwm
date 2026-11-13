@@ -20,19 +20,20 @@ config.h:
 dwm: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
 
-${KEYS_MAN}: config.h dwm-keys.sh dwm-keys.awk config.mk ${wildcard *.c}
-	CC="${CC}" VERSION="${VERSION}" ./dwm-keys.sh config.h > $@
+${KEYS_MAN}: config.h dwm-keys.c config.mk ${wildcard *.c}
+	${CC} -std=c99 -pedantic -Wall -O2 -o dwm-keys dwm-keys.c
+	CC="${CC}" VERSION="${VERSION}" ./dwm-keys config.h > $@
 	chmod 644 $@
 
 keys: ${KEYS_MAN}
 
 clean:
-	rm -f dwm ${OBJ} ${KEYS_MAN} dwm-${VERSION}.tar.gz config.h
+	rm -f dwm ${OBJ} ${KEYS_MAN} dwm-keys dwm-${VERSION}.tar.gz config.h
 
 dist: clean
 	mkdir -p dwm-${VERSION}
 	cp -R LICENSE Makefile README config.def.h config.mk\
-		dwm.1 dwm-keys.sh dwm-keys.awk drw.h util.h ${SRC}\
+		dwm.1 dwm-keys.c drw.h util.h ${SRC}\
 		dwm.desktop dwm.png transient.c dwm-${VERSION}
 	tar -cf dwm-${VERSION}.tar dwm-${VERSION}
 	gzip dwm-${VERSION}.tar
